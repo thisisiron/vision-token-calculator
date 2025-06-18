@@ -20,19 +20,19 @@ pip install -r requirements.txt
 ### Using an existing image
 
 ```bash
-python vision_token_calculator.py --image path/to/your/image.jpg
+python calculate.py --image path/to/your/image.jpg
 ```
 
 ### Creating a dummy image with specific dimensions
 
 ```bash
-python vision_token_calculator.py --size 1920 1080
+python calculate.py --size 1920 1080
 ```
 
 ### Specifying a different model
 
 ```bash
-python vision_token_calculator.py --image path/to/your/image.jpg --model-path "model/path"
+python calculate.py --image path/to/your/image.jpg --model-path "model/path"
 ```
 
 ## Supported Models

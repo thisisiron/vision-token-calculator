@@ -164,11 +164,16 @@ def main():
         result = count_image_tokens(image_input, getattr(args, 'model_path'))
         
         # Display results
-        print("\nVision Token Analysis Results:")
-        print("-" * 40)
-        print(f"Input size(WxH): {result['image_size'][0]}x{result['image_size'][1]}")
-        print(f"Image token: {result['image_token']}")
-        print(f"Number of Image tokens: {result['number_of_image_tokens']}")
+        print("\n" + "=" * 50)
+        print(" VISION TOKEN ANALYSIS RESULTS ")
+        print("=" * 50)
+        
+        print(f"Model                  : {getattr(args, 'model_path')}")
+        print(f"Image Size (W x H)     : {result['image_size'][0]} x {result['image_size'][1]}")
+        print(f"Image Token            : {result['image_token']}")
+        print(f"Number of Image Tokens : {result['number_of_image_tokens']}")
+        
+        print("=" * 50)
         
     except Exception as e:
         raise f"Error occurred: {str(e)}"
