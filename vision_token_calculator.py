@@ -43,9 +43,6 @@ def count_image_tokens(image_input, model_path: str = "Qwen/Qwen2.5-VL-7B-Instru
     
     if isinstance(image_input, str):
         image_input = Image.open(image_input)
-        
-    image_size = image_input.size
-    print(f"Image size: {image_size[0]}x{image_size[1]}")
     
     # Create messages with file path
     messages = [
@@ -95,8 +92,9 @@ def count_image_tokens(image_input, model_path: str = "Qwen/Qwen2.5-VL-7B-Instru
     
     # Get detailed token information
     processor_info = {
-        'image_tokens': num_image_tokens,
-        'image_size': image_size,
+        'number_of_image_tokens': num_image_tokens,
+        'image_size': image_input.size,
+        'image_token': processor.tokenizer.decode(image_token_index)
     }
     
     return processor_info
@@ -111,17 +109,12 @@ def parse_arguments():
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     
-    # Image size arguments
+    # Image size argument
     parser.add_argument(
-        '--width',
+        '--size', '-s',
         type=int,
-        help='Width of dummy image (pixels)'
-    )
-    
-    parser.add_argument(
-        '--height',
-        type=int,
-        help='Height of dummy image (pixels)'
+        nargs=2,
+        help='Size of dummy image in format "WIDTH HEIGHT" (e.g., "1920 1080")'
     )
     
     # Existing image path
@@ -152,7 +145,6 @@ def main():
     image_input = None
     
     try:
-        
         if args.image:
             # Use existing image file
             image_input = args.image
@@ -160,32 +152,27 @@ def main():
                 raise FileNotFoundError(f"Specified image file not found: {image_input}")
             print(f"Using existing image: {image_input}")
             
-        elif args.width and args.height:
-            # Create dummy image (PIL object)
-            image_input = create_dummy_image(args.width, args.height)
+        elif args.size:
+            # Create dummy image with specified dimensions
+            width, height = args.size
+            image_input = create_dummy_image(width, height)
             
         else:
-            # Default behavior - create a default dummy image or use test image
-            if os.path.exists("test_image.jpg"):
-                image_input = "test_image.jpg"
-                print("Using default test image: test_image.jpg")
-            else:
-                # Create default 512x512 image
-                print("Creating default dummy image (512x512)...")
-                image_input = create_dummy_image(512, 512)
+            raise ValueError("No image input provided")
         
         # Calculate tokens
         result = count_image_tokens(image_input, getattr(args, 'model_path'))
         
         # Display results
-        print("\nToken Analysis Results:")
+        print("\nVision Token Analysis Results:")
         print("-" * 40)
-        print(f"Image size: {result['image_size'][0]}x{result['image_size'][1]}")
-        print(f"Image tokens: {result['image_tokens']}")
+        print(f"Input size(WxH): {result['image_size'][0]}x{result['image_size'][1]}")
+        print(f"Image token: {result['image_token']}")
+        print(f"Number of Image tokens: {result['number_of_image_tokens']}")
         
     except Exception as e:
-        print(f"Error occurred: {str(e)}")
-        raise
+        raise f"Error occurred: {str(e)}"
+        
 
 
 if __name__ == "__main__":
