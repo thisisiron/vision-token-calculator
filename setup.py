@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="vision-token-calculator",
+    name="vt-calc",
     version="0.0.1",
     author="Vision Token Calculator",
     description="Calculate the number of tokens used for images in vision language models",
@@ -10,9 +10,7 @@ setup(
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
-        "Operating System :: OS Independent",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
-        "Topic :: Multimedia :: Graphics",
     ],
     python_requires=">=3.8",
     install_requires=[
@@ -24,7 +22,6 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "vision-token-calculator=calculate:main",
             "vt-calc=calculate:main",
         ],
     },
