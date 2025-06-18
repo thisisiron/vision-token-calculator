@@ -1,10 +1,15 @@
 from setuptools import setup, find_packages
 
+with open("README.md", "r", encoding="utf-8") as fh:
+    long_description = fh.read()
+
 setup(
     name="vt-calc",
-    version="0.0.1",
+    version="0.0.2",
     author="Vision Token Calculator",
     description="Calculate the number of tokens used for images in vision language models",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     url="https://github.com/thisisiron/vision-token-calculator",
     py_modules=["calculate"],
     classifiers=[

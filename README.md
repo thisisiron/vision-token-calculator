@@ -11,27 +11,47 @@ A Python tool for calculating the number of tokens generated when processing ima
 
 ## Installation
 
+### Option 1: Install as editable package (recommended)
+
+```bash
+pip install -e .
+```
+
+This will install the package in development mode and make the `vt-calc` command available system-wide.
+
+### Option 2: Install dependencies only
+
 ```bash
 pip install -r requirements.txt
 ```
 
 ## Usage
 
-### Using an existing image
+### Method 1: Using the vt-calc command (after pip install -e .)
+
+After installing with `pip install -e .`, you can use the `vt-calc` command directly:
 
 ```bash
+# Using an existing image
+vt-calc --image path/to/your/image.jpg
+
+# Creating a dummy image with specific dimensions
+vt-calc --size 1920 1080
+
+# Specifying a different model
+vt-calc --image path/to/your/image.jpg --model-path "model/path"
+```
+
+### Method 2: Direct python execution
+
+```bash
+# Using an existing image
 python calculate.py --image path/to/your/image.jpg
-```
 
-### Creating a dummy image with specific dimensions
-
-```bash
+# Creating a dummy image with specific dimensions
 python calculate.py --size 1920 1080
-```
 
-### Specifying a different model
-
-```bash
+# Specifying a different model
 python calculate.py --image path/to/your/image.jpg --model-path "model/path"
 ```
 
