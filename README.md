@@ -11,15 +11,19 @@ A Python tool for calculating the number of tokens generated when processing ima
 
 ## Installation
 
-### Option 1: Install as editable package (recommended)
+### Option 1: Install from PyPI (recommended)
+
+```bash
+pip install vt-calc
+```
+
+### Option 2: Install as editable package (for development)
 
 ```bash
 pip install -e .
 ```
 
-This will install the package in development mode and make the `vt-calc` command available system-wide.
-
-### Option 2: Install dependencies only
+### Option 3: Install dependencies only
 
 ```bash
 pip install -r requirements.txt
