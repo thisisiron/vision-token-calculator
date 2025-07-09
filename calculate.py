@@ -1,8 +1,22 @@
 import torch
+import os
+import warnings
+
+# Import and setup quiet environment to disable HF warnings
+try:
+    from setup_env import setup_quiet_environment
+    setup_quiet_environment()
+except ImportError:
+    # Fallback: minimal setup if setup_env is not available
+    import os
+    import warnings
+    os.environ['TOKENIZERS_PARALLELISM'] = 'false'
+    os.environ['TRANSFORMERS_VERBOSITY'] = 'error'
+    warnings.filterwarnings('ignore')
+
 from transformers import AutoProcessor
 from qwen_vl_utils import process_vision_info
 from PIL import Image
-import os
 import argparse
 import numpy as np
 import glob
