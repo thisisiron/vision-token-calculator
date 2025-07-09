@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
@@ -30,5 +30,14 @@ setup(
             "vt-calc=calculate:main",
         ],
     },
-    keywords=["vision", "tokens", "language model", "multimodal", "ai", "vlm", "vision language model", "vision language model token calculator"],
-) 
+    keywords=[
+        "vision",
+        "tokens",
+        "language model",
+        "multimodal",
+        "ai",
+        "vlm",
+        "vision language model",
+        "vision language model token calculator",
+    ],
+)
