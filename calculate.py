@@ -6,6 +6,13 @@ import os
 import argparse
 import numpy as np
 import glob
+from printer import (
+    display_batch_results,
+    display_single_image_results,
+    print_processing_status,
+    print_processing_result,
+    print_directory_info
+)
 
 
 def calculate_mean(values):
@@ -165,90 +172,48 @@ def process_directory(directory_path: str, model_path: str):
     Returns:
         dict: Dictionary containing batch statistics
     """
-    print(f"Processing directory: {directory_path}")
-    
     # Get all image files
     image_files = get_image_files(directory_path)
     
     if not image_files:
         raise ValueError(f"No image files found in directory: {directory_path}")
     
-    print(f"Found {len(image_files)} images to process...")
-    print()
+    print_directory_info(directory_path, len(image_files))
     
     token_counts = []
     processed_files = []
-    failed_files = []
     
     # Process each image
     for i, image_file in enumerate(image_files, 1):
-        try:
-            filename = os.path.basename(image_file)
-            print(f"Processing: {filename} ", end="", flush=True)
-            
-            result = count_image_tokens(image_file, model_path)
-            token_count = int(result['number_of_image_tokens'])
-            token_counts.append(token_count)
-            processed_files.append({
-                'filename': filename,
-                'size': result['image_size'],
-                'tokens': token_count
-            })
-            
-        except Exception as e:
-            print(f"✗ (Error: {str(e)})")
-            failed_files.append({
-                'filename': os.path.basename(image_file),
-                'error': str(e)
-            })
-    
-    if not token_counts:
-        raise ValueError("No images were successfully processed")
+        filename = os.path.basename(image_file)
+        print_processing_status(filename, i, len(image_files))
+        
+        result = count_image_tokens(image_file, model_path)
+        token_count = int(result['number_of_image_tokens'])
+        token_counts.append(token_count)
+        processed_files.append({
+            'filename': filename,
+            'size': result['image_size'],
+            'tokens': token_count
+        })
+        print_processing_result(True, token_count)
     
     # Calculate statistics
     stats = {
         'total_processed': len(processed_files),
-        'total_failed': len(failed_files),
+        'total_failed': 0,
         'average_tokens': calculate_mean(token_counts),
         'min_tokens': min(token_counts),
         'max_tokens': max(token_counts),
         'std_deviation': calculate_stdev(token_counts),
         'processed_files': processed_files,
-        'failed_files': failed_files
+        'failed_files': []
     }
     
     return stats
 
 
-def display_batch_results(stats: dict, model_path: str):
-    """
-    Display batch processing results.
-    
-    Args:
-        stats (dict): Statistics dictionary from process_directory
-        model_path (str): Model path used for processing
-    """
-    print("\n" + "=" * 50)
-    print(" BATCH ANALYSIS RESULTS ")
-    print("=" * 50)
-    
-    print(f"Model                     : {model_path}")
-    print(f"Total Images Processed    : {stats['total_processed']}")
-    if stats['total_failed'] > 0:
-        print(f"Total Images Failed       : {stats['total_failed']}")
-    print(f"Average Vision Tokens     : {stats['average_tokens']:.1f}")
-    print(f"Minimum Vision Tokens     : {stats['min_tokens']}")
-    print(f"Maximum Vision Tokens     : {stats['max_tokens']}")
-    if stats['std_deviation'] > 0:
-        print(f"Standard Deviation        : {stats['std_deviation']:.1f}")
-    
-    print("=" * 50)
-    
-    # Show failed files if any
-    if stats['failed_files']:
-        print("\nFailed Files:")
-        for failed in stats['failed_files']:
-            print(f"  - {failed['filename']}: {failed['error']}")
+
 
 
 def parse_arguments():
@@ -256,18 +221,7 @@ def parse_arguments():
     Parse command line arguments.
     """
     parser = argparse.ArgumentParser(
-        description="Vision Token Calculator - Process single images or batch process directories",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  Single image processing:
-    python calculate.py --image photo.jpg
-    python calculate.py --size 1920 1080
-  
-  Batch processing:
-    python calculate.py --img-dir /path/to/images/
-    python calculate.py -d ./images/ --model-path Qwen/Qwen2.5-VL-7B-Instruct
-        """
+        description="Vision Token Calculator - Process single images or batch process directories"
     )
     
     # Create mutually exclusive group for input methods
@@ -313,64 +267,34 @@ def main():
     """
     args = parse_arguments()
     
-    try:
-        # Check if directory processing is requested
-        if args.img_dir:
-            # Batch processing mode
-            if not os.path.exists(args.img_dir):
-                raise FileNotFoundError(f"Specified directory not found: {args.img_dir}")
-            if not os.path.isdir(args.img_dir):
-                raise ValueError(f"Specified path is not a directory: {args.img_dir}")
-            
-            # Process directory
-            stats = process_directory(args.img_dir, args.model_path)
-            display_batch_results(stats, args.model_path)
-            
-        elif args.image:
-            # Use existing image file
-            if not os.path.exists(args.image):
-                raise FileNotFoundError(f"Specified image file not found: {args.image}")
-            print(f"Using existing image: {args.image}")
-            
-            # Calculate tokens
-            result = count_image_tokens(args.image, args.model_path)
-            
-            # Display results
-            print("\n" + "=" * 50)
-            print(" VISION TOKEN ANALYSIS RESULTS ")
-            print("=" * 50)
-            
-            print(f"Model                  : {args.model_path}")
-            print(f"Image Size (W x H)     : {result['image_size'][0]} x {result['image_size'][1]}")
-            print(f"Image Token            : {result['image_token']}")
-            print(f"Number of Image Tokens : {result['number_of_image_tokens']}")
-            
-            print("=" * 50)
-            
-        elif args.size:
-            # Create dummy image with specified dimensions
-            width, height = args.size
-            image_input = create_dummy_image(width, height)
-            print(f"Using dummy image: {width} x {height}")
-            
-            # Calculate tokens
-            result = count_image_tokens(image_input, args.model_path)
-            
-            # Display results
-            print("\n" + "=" * 50)
-            print(" VISION TOKEN ANALYSIS RESULTS ")
-            print("=" * 50)
-            
-            print(f"Model                  : {args.model_path}")
-            print(f"Image Size (W x H)     : {result['image_size'][0]} x {result['image_size'][1]}")
-            print(f"Image Token            : {result['image_token']}")
-            print(f"Number of Image Tokens : {result['number_of_image_tokens']}")
-            
-            print("=" * 50)
+    # Check if directory processing is requested
+    if args.img_dir:
+        # Batch processing mode
+        # Process directory
+        stats = process_directory(args.img_dir, args.model_path)
+        display_batch_results(stats, args.model_path)
         
-    except Exception as e:
-        print(f"Error occurred: {str(e)}")
-        return 1
+    elif args.image:
+        # Use existing image file
+        print(f"Using existing image: {args.image}")
+        
+        # Calculate tokens
+        result = count_image_tokens(args.image, args.model_path)
+        
+        # Display results
+        display_single_image_results(result, args.model_path, f"Existing image: {args.image}")
+        
+    elif args.size:
+        # Create dummy image with specified dimensions
+        width, height = args.size
+        image_input = create_dummy_image(width, height)
+        print(f"Using dummy image: {width} x {height}")
+        
+        # Calculate tokens
+        result = count_image_tokens(image_input, args.model_path)
+        
+        # Display results
+        display_single_image_results(result, args.model_path, f"Dummy image: {width} x {height}")
     
     return 0
         
