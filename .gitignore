@@ -49,3 +49,6 @@ logs/
 # Local development settings
 local_settings.py
 db.sqlite3 
+
+# Ruff
+.ruff_cache/
