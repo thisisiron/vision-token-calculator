@@ -37,4 +37,4 @@ def setup_quiet_environment():
 
 if __name__ == "__main__":
     setup_quiet_environment()
-    print("Environment configured to minimize Hugging Face warnings.") 
+    print("Environment configured to minimize Hugging Face warnings.")

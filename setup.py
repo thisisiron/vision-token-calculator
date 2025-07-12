@@ -11,7 +11,8 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/thisisiron/vision-token-calculator",
-    py_modules=["calculate"],
+    packages=find_packages(where="src"),
+    package_dir={"": "src"},
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
@@ -27,8 +28,17 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "vt-calc=calculate:main",
+            "vt-calc=vt_calculator.calculate:main",
         ],
     },
-    keywords=["vision", "tokens", "language model", "multimodal", "ai", "vlm", "vision language model", "vision language model token calculator"],
-) 
+    keywords=[
+        "vision",
+        "tokens",
+        "language model",
+        "multimodal",
+        "ai",
+        "vlm",
+        "vision language model",
+        "vision language model token calculator",
+    ],
+)

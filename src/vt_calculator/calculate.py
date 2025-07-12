@@ -4,7 +4,7 @@ import warnings
 
 # Import and setup quiet environment to disable HF warnings
 try:
-    from setup_env import setup_quiet_environment
+    from .setup_env import setup_quiet_environment
     setup_quiet_environment()
 except ImportError:
     # Fallback: minimal setup if setup_env is not available
@@ -20,7 +20,7 @@ from PIL import Image
 import argparse
 import numpy as np
 import glob
-from printer import (
+from .printer import (
     display_batch_results,
     display_single_image_results,
     print_processing_status,
@@ -229,7 +229,6 @@ def process_directory(directory_path: str, model_path: str):
 
 
 
-
 def parse_arguments():
     """
     Parse command line arguments.
@@ -315,4 +314,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main()

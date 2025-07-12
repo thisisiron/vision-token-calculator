@@ -92,4 +92,3 @@ def print_directory_info(directory_path: str, file_count: int):
     print()
 
 
- 
