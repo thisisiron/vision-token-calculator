@@ -46,19 +46,6 @@ vt-calc --size 1920 1080
 vt-calc --image path/to/your/image.jpg --model-path "model/path"
 ```
 
-### Method 2: Direct python execution
-
-```bash
-# Using an existing image
-python calculate.py --image path/to/your/image.jpg
-
-# Creating a dummy image with specific dimensions
-python calculate.py --size 1920 1080
-
-# Specifying a different model
-python calculate.py --image path/to/your/image.jpg --model-path "model/path"
-```
-
 ## Supported Models
 
 | Model | Model size |
