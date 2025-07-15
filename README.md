@@ -23,15 +23,9 @@ pip install vt-calc
 pip install -e .
 ```
 
-### Option 3: Install dependencies only
-
-```bash
-pip install -r requirements.txt
-```
-
 ## Usage
 
-### Method 1: Using the vt-calc command (after pip install -e .)
+Using the vt-calc command (after pip install -e .)
 
 After installing with `pip install -e .`, you can use the `vt-calc` command directly:
 

@@ -1,7 +1,7 @@
 """
 Vision Token Calculator
 
-A Python tool for calculating the number of tokens generated when processing images 
+A Python tool for calculating the number of tokens generated when processing images
 with various Vision Language Models (VLMs).
 """
 
@@ -13,8 +13,8 @@ from .printer import display_batch_results, display_single_image_results
 
 __all__ = [
     "count_image_tokens",
-    "create_dummy_image", 
+    "create_dummy_image",
     "process_directory",
     "display_batch_results",
-    "display_single_image_results"
+    "display_single_image_results",
 ]

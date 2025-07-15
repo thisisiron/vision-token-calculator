@@ -1,6 +1,6 @@
 #!/bin/bash
 
-check_dirs="tests"
+check_dirs="src tests"
 exclude_folders="__pycache__ .git venv dist"
 
 # ruff check
