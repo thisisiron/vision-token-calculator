@@ -1,8 +1,6 @@
 import sys
 from pathlib import Path
 
-import pytest
-
 
 def run_cli(capsys, argv):
     import vt_calculator.calculate as calc
@@ -55,5 +53,3 @@ def test_cli_with_img_dir(capsys, tmp_path):
     assert "BATCH ANALYSIS RESULTS" in output
     assert "Total Images Processed" in output
     assert "Average Vision Tokens" in output
-
-

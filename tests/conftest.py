@@ -1,5 +1,3 @@
-import types
-
 import torch
 import pytest
 
@@ -72,5 +70,3 @@ def mock_cli_env(monkeypatch):
     monkeypatch.setenv("TRANSFORMERS_VERBOSITY", "error")
 
     yield
-
-

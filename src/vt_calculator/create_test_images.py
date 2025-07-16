@@ -1,42 +1,27 @@
 #!/usr/bin/env python3
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image
 import os
 import random
 
 
 def create_test_image(width, height, filename, color=None):
-    """Create a test image with specified dimensions and color."""
+    """Create a solid color test image with specified dimensions.
+
+    Args:
+        width (int): Image width in pixels
+        height (int): Image height in pixels
+        filename (str): Output file path
+        color (tuple[int, int, int] | None): Optional RGB color
+    """
     if color is None:
-        color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+        color = (
+            random.randint(0, 255),
+            random.randint(0, 255),
+            random.randint(0, 255),
+        )
 
     image = Image.new("RGB", (width, height), color)
-    draw = ImageDraw.Draw(image)
-
-    # Add some text
-    try:
-        # Try to use a default font, fall back to default if not available
-        font = ImageFont.load_default()
-    except:
-        font = None
-
-    text = f"{width}x{height}"
-    if font:
-        # Get text bounding box for centering
-        bbox = draw.textbbox((0, 0), text, font=font)
-        text_width = bbox[2] - bbox[0]
-        text_height = bbox[3] - bbox[1]
-        x = (width - text_width) // 2
-        y = (height - text_height) // 2
-        draw.text((x, y), text, fill=(255, 255, 255), font=font)
-
-    # Add some geometric shapes
-    draw.rectangle(
-        [width // 4, height // 4, 3 * width // 4, 3 * height // 4],
-        outline=(255, 255, 255),
-        width=3,
-    )
-
     image.save(filename)
     print(f"Created: {filename}")
 
