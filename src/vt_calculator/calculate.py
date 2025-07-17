@@ -116,13 +116,9 @@ def count_image_tokens(image_input, model_path: str = "Qwen/Qwen2.5-VL-7B-Instru
     text = processor.apply_chat_template(
         messages, tokenize=False, add_generation_prompt=True
     )
-
-    # Process vision information
-    if "qwen" in processor.__class__.__name__.lower():
-        image_inputs, video_inputs = process_vision_info(messages)
-    else:
-        image_inputs = [image_input]
-        video_inputs = None
+    
+    image_inputs = [image_input]
+    video_inputs = None
 
     # Process inputs
     inputs = processor(
