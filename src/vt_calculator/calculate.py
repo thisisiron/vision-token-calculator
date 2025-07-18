@@ -16,7 +16,6 @@ except ImportError:
     warnings.filterwarnings("ignore")
 
 from transformers import AutoProcessor
-from qwen_vl_utils import process_vision_info
 from PIL import Image
 import argparse
 import numpy as np
@@ -116,7 +115,7 @@ def count_image_tokens(image_input, model_path: str = "Qwen/Qwen2.5-VL-7B-Instru
     text = processor.apply_chat_template(
         messages, tokenize=False, add_generation_prompt=True
     )
-    
+
     image_inputs = [image_input]
     video_inputs = None
 
@@ -128,6 +127,11 @@ def count_image_tokens(image_input, model_path: str = "Qwen/Qwen2.5-VL-7B-Instru
         padding=True,
         return_tensors="pt",
     )
+
+    if "qwen" in model_path.lower():
+        grid_t, grid_h, grid_w = inputs["image_grid_thw"][0].tolist()
+        reszied_height = grid_h * processor.image_processor.patch_size
+        reszied_width = grid_w * processor.image_processor.patch_size
 
     # Calculate token counts
     input_ids = inputs["input_ids"]
@@ -146,6 +150,7 @@ def count_image_tokens(image_input, model_path: str = "Qwen/Qwen2.5-VL-7B-Instru
         "number_of_image_tokens": num_image_tokens,
         "image_size": image_input.size,
         "image_token": processor.tokenizer.decode(image_token_index),
+        "resized_size": (reszied_width, reszied_height),
     }
 
     return processor_info

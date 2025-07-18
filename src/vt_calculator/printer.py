@@ -50,6 +50,9 @@ def display_single_image_results(
     print(
         f"Image Size (W x H)     : {result['image_size'][0]} x {result['image_size'][1]}"
     )
+    print(
+        f"Resized Image Size (W x H) : {result['resized_size'][0]} x {result['resized_size'][1]}"
+    )
     print(f"Image Token            : {result['image_token']}")
     print(f"Number of Image Tokens : {result['number_of_image_tokens']}")
 
