@@ -259,7 +259,7 @@ def parse_arguments():
 
     # Existing image path
     input_group.add_argument(
-        "--image", "-i", type=str, help="Path to existing image file"
+        "--image", "-i", type=str, help="Path to image file or directory"
     )
 
     # Directory path for batch processing
@@ -296,16 +296,21 @@ def main():
         display_batch_results(stats, args.model_path)
 
     elif args.image:
-        # Use existing image file
-        print(f"Using existing image: {args.image}")
+        # If --image points to a directory, process it as a batch
+        if os.path.isdir(args.image):
+            stats = process_directory(args.image, args.model_path)
+            display_batch_results(stats, args.model_path)
+        else:
+            # Use existing single image file
+            print(f"Using existing image: {args.image}")
 
-        # Calculate tokens
-        result = count_image_tokens(args.image, args.model_path)
+            # Calculate tokens
+            result = count_image_tokens(args.image, args.model_path)
 
-        # Display results
-        display_single_image_results(
-            result, args.model_path, f"Existing image: {args.image}"
-        )
+            # Display results
+            display_single_image_results(
+                result, args.model_path, f"Existing image: {args.image}"
+            )
 
     elif args.size:
         # Create dummy image with specified dimensions
