@@ -237,17 +237,12 @@ def process_directory(directory_path: str, model_path: str):
 
 
 def parse_arguments():
-    """
-    Parse command line arguments.
-    """
     parser = argparse.ArgumentParser(
-        description="Vision Token Calculator - Process single images or batch process directories"
+        description="Vision Token Calculator"
     )
 
-    # Create mutually exclusive group for input methods
     input_group = parser.add_mutually_exclusive_group(required=True)
 
-    # Image size argument
     input_group.add_argument(
         "--size",
         "-s",
@@ -257,20 +252,10 @@ def parse_arguments():
         help='Size of dummy image in format "WIDTH HEIGHT" (e.g., "1920 1080")',
     )
 
-    # Existing image path
     input_group.add_argument(
         "--image", "-i", type=str, help="Path to image file or directory"
     )
 
-    # Directory path for batch processing
-    input_group.add_argument(
-        "--img_dir",
-        "-d",
-        type=str,
-        help="Directory path containing images for batch processing",
-    )
-
-    # Model path
     parser.add_argument(
         "--model-path",
         "-m",
@@ -288,14 +273,7 @@ def main():
     """
     args = parse_arguments()
 
-    # Check if directory processing is requested
-    if args.img_dir:
-        # Batch processing mode
-        # Process directory
-        stats = process_directory(args.img_dir, args.model_path)
-        display_batch_results(stats, args.model_path)
-
-    elif args.image:
+    if args.image:
         # If --image points to a directory, process it as a batch
         if os.path.isdir(args.image):
             stats = process_directory(args.image, args.model_path)
