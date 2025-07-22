@@ -1,25 +1,15 @@
 import os
 import warnings
 
-# Import and setup quiet environment to disable HF warnings
-try:
-    from .setup_env import setup_quiet_environment
+from .setup_env import setup_quiet_environment
 
-    setup_quiet_environment()
-except ImportError:
-    # Fallback: minimal setup if setup_env is not available
-    import os
-    import warnings
-
-    os.environ["TOKENIZERS_PARALLELISM"] = "false"
-    os.environ["TRANSFORMERS_VERBOSITY"] = "error"
-    warnings.filterwarnings("ignore")
+setup_quiet_environment()
 
 from transformers import AutoProcessor
 from PIL import Image
 import argparse
 import numpy as np
-import glob
+from .utils import get_image_files
 from .printer import (
     display_batch_results,
     display_single_image_results,
@@ -156,34 +146,7 @@ def count_image_tokens(image_input, model_path: str = "Qwen/Qwen2.5-VL-7B-Instru
     return processor_info
 
 
-def get_image_files(directory_path: str):
-    """
-    Get all image files from the specified directory.
-
-    Args:
-        directory_path (str): Path to directory containing images
-
-    Returns:
-        list: List of image file paths
-    """
-    image_extensions = [
-        "*.jpg",
-        "*.jpeg",
-        "*.png",
-        "*.gif",
-        "*.bmp",
-        "*.tiff",
-        "*.tif",
-        "*.webp",
-    ]
-    image_files = []
-
-    for ext in image_extensions:
-        for case_ext in [ext, ext.upper()]:
-            pattern = os.path.join(directory_path, case_ext)
-            image_files += glob.glob(pattern)
-
-    return sorted(image_files)
+ 
 
 
 def process_directory(directory_path: str, model_path: str):
