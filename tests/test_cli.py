@@ -38,7 +38,7 @@ def test_cli_with_image(capsys):
     assert "Number of Image Tokens" in output
 
 
-def test_cli_with_img_dir(capsys, tmp_path):
+def test_cli_with_directory_via_image_flag(capsys, tmp_path):
     # Copy a couple of images into a temp directory to ensure isolation
     repo_root = Path(__file__).resolve().parents[1]
     img1 = repo_root / "test_images" / "test_7_256x256.jpg"
@@ -48,7 +48,7 @@ def test_cli_with_img_dir(capsys, tmp_path):
     dst1.write_bytes(img1.read_bytes())
     dst2.write_bytes(img2.read_bytes())
 
-    exit_code, output = run_cli(capsys, ["--img_dir", str(tmp_path)])
+    exit_code, output = run_cli(capsys, ["--image", str(tmp_path)])
     assert exit_code == 0
     assert "BATCH ANALYSIS RESULTS" in output
     assert "Total Images Processed" in output

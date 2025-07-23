@@ -1,5 +1,4 @@
 import os
-import warnings
 
 from .setup_env import setup_quiet_environment
 
@@ -9,7 +8,7 @@ from transformers import AutoProcessor
 from PIL import Image
 import argparse
 import numpy as np
-from .utils import get_image_files
+from .utils import get_image_files, calculate_mean, calculate_stdev
 from .printer import (
     display_batch_results,
     display_single_image_results,
@@ -17,39 +16,6 @@ from .printer import (
     print_processing_result,
     print_directory_info,
 )
-
-
-def calculate_mean(values):
-    """
-    Calculate the arithmetic mean of a list of numbers.
-
-    Args:
-        values (list): List of numeric values
-
-    Returns:
-        float: Mean value
-    """
-    if not values:
-        return 0.0
-    return sum(values) / len(values)
-
-
-def calculate_stdev(values):
-    """
-    Calculate the sample standard deviation of a list of numbers.
-
-    Args:
-        values (list): List of numeric values
-
-    Returns:
-        float: Standard deviation
-    """
-    if len(values) < 2:
-        return 0.0
-
-    mean = calculate_mean(values)
-    variance = sum((x - mean) ** 2 for x in values) / (len(values) - 1)
-    return variance**0.5
 
 
 def create_dummy_image(width: int, height: int):
@@ -146,9 +112,6 @@ def count_image_tokens(image_input, model_path: str = "Qwen/Qwen2.5-VL-7B-Instru
     return processor_info
 
 
- 
-
-
 def process_directory(directory_path: str, model_path: str):
     """
     Process all images in a directory and calculate batch statistics.
@@ -200,9 +163,7 @@ def process_directory(directory_path: str, model_path: str):
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(
-        description="Vision Token Calculator"
-    )
+    parser = argparse.ArgumentParser(description="Vision Token Calculator")
 
     input_group = parser.add_mutually_exclusive_group(required=True)
 

@@ -1,5 +1,7 @@
 import os
 import glob
+from typing import Iterable
+import numpy as np
 
 
 def get_image_files(directory_path: str):
@@ -28,3 +30,15 @@ def get_image_files(directory_path: str):
     return sorted(image_files)
 
 
+def calculate_mean(values: Iterable[float]) -> float:
+    arr = np.array(values, dtype=float)
+    if arr.size == 0:
+        return 0.0
+    return float(arr.mean())
+
+
+def calculate_stdev(values: Iterable[float]) -> float:
+    arr = np.array(values, dtype=float)
+    if arr.size < 2:
+        return 0.0
+    return float(arr.std(ddof=1))
