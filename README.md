@@ -1,23 +1,22 @@
 # Vision Token Calculator
 
-A Python tool for calculating the number of tokens generated when processing images with various Vision Language Models (VLMs).
+A Python tool for calculating the number of tokens generated when processing images with Vision Language Models (VLMs).
 
 ## Features
 
-- Calculate image tokens for different VLMs
-- Support for both existing images and dummy images
-- Detailed token analysis including image size and token count
-- Easy-to-use command line interface
+- Calculate image tokens for VLMs
+- Support both existing images and dummy images
+- Simple command line interface (CLI)
 
 ## Installation
 
-### Option 1: Install from PyPI (recommended)
+### Option 1: PyPI (recommended)
 
 ```bash
 pip install vt-calc
 ```
 
-### Option 2: Install as editable package (for development)
+### Option 2: From source (editable for development)
 
 ```bash
 pip install -e .
@@ -30,14 +29,43 @@ Using the vt-calc command (after pip install -e .)
 After installing with `pip install -e .`, you can use the `vt-calc` command directly:
 
 ```bash
-# Using an existing image
+# Single image
 vt-calc --image path/to/your/image.jpg
 
-# Creating a dummy image with specific dimensions
+# Directory (batch processing)
+vt-calc --image path/to/your/images_dir
+
+# Dummy image with specific dimensions
 vt-calc --size 1920 1080
 
-# Specifying a different model
-vt-calc --image path/to/your/image.jpg --model-path "model/path"
+# Specify a different model (Hugging Face model id)
+vt-calc --image path/to/your/image.jpg --model-path "Qwen/Qwen2.5-VL-7B-Instruct"
+
+# Show help
+vt-calc --help
+```
+
+### CLI options
+
+- `-i, --image`: Path to an image file or a directory of images
+- `-s, --size WIDTH HEIGHT`: Create a dummy image of the given size
+- `-m, --model-path`: Model to use (default: `Qwen/Qwen2.5-VL-7B-Instruct`)
+
+Supported input formats for directory processing: `.jpg`, `.jpeg`, `.png`, `.webp` (case-insensitive).
+
+### Example output (single image)
+
+```text
+==================================================
+ VISION TOKEN ANALYSIS RESULTS 
+==================================================
+Model                  : Qwen/Qwen2.5-VL-7B-Instruct
+Image Source           : Existing image: examples/cat.jpg
+Original Image Size (W x H)     : 1024 x 768
+Resized Image Size (W x H) : 1024 x 768
+Image Token            : <image>
+Number of Image Tokens : 256
+==================================================
 ```
 
 ## Supported Models
@@ -51,4 +79,4 @@ vt-calc --image path/to/your/image.jpg --model-path "model/path"
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+This project is licensed under the MIT License — see the `LICENSE` file for details.
