@@ -27,7 +27,13 @@ def setup_quiet_environment():
     logging.getLogger("huggingface_hub").setLevel(logging.ERROR)
     logging.getLogger("torch").setLevel(logging.ERROR)
 
-    # Disable transformers specific logging
+    try:
+        from huggingface_hub.utils import disable_progress_bars
+
+        disable_progress_bars()
+    except ImportError:
+        pass
+
     try:
         import transformers
 
