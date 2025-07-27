@@ -20,8 +20,3 @@ def setup_quiet_environment():
         transformers.logging.disable_propagation()
     except ImportError:
         pass
-
-
-if __name__ == "__main__":
-    setup_quiet_environment()
-    print("Environment configured to minimize Hugging Face warnings.")
