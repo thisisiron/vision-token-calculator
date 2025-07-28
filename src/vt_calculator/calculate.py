@@ -2,8 +2,6 @@ import os
 
 from .setup_env import setup_quiet_environment
 
-setup_quiet_environment()
-
 from transformers import AutoProcessor
 from PIL import Image
 import argparse
@@ -16,6 +14,8 @@ from .printer import (
     print_processing_result,
     print_directory_info,
 )
+
+setup_quiet_environment()
 
 
 def create_dummy_image(width: int, height: int):
