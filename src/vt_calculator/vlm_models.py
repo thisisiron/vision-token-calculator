@@ -3,7 +3,11 @@ import math
 
 
 def smart_resize(
-    height: int, width: int, factor: int = 28, min_pixels: int = 56 * 56, max_pixels: int = 14 * 14 * 4 * 1280
+    height: int,
+    width: int,
+    factor: int = 28,
+    min_pixels: int = 56 * 56,
+    max_pixels: int = 14 * 14 * 4 * 1280,
 ):
     """Rescales the image so that the following conditions are met:
 
@@ -33,20 +37,18 @@ def smart_resize(
 
 @dataclass
 class VLMAnalyst:
-
     def __init__(self, processor):
         self.processor = processor
-    
+
     def get_num_image_patches(self):
         pass
-        
+
     def get_num_image_tokens(self):
         pass
 
 
 @dataclass
 class Qwen2_5_VLAnalyst(VLMAnalyst):
-
     def __init__(self, processor):
         super().__init__(processor)
 
@@ -58,12 +60,17 @@ class Qwen2_5_VLAnalyst(VLMAnalyst):
         self.merge_size = processor.image_processor.merge_size
         self.min_pixels = processor.image_processor.min_pixels
         self.max_pixels = processor.image_processor.max_pixels
-    
+
     def get_num_patches(self, image_size):
         height, width = image_size
         factor = self.patch_size * self.merge_size
-        resized_height, resized_width = smart_resize(height, width, factor, self.min_pixels, self.max_pixels)
-        grid_h, grid_w = resized_height // self.patch_size, resized_width // self.patch_size
+        resized_height, resized_width = smart_resize(
+            height, width, factor, self.min_pixels, self.max_pixels
+        )
+        grid_h, grid_w = (
+            resized_height // self.patch_size,
+            resized_width // self.patch_size,
+        )
         return grid_h * grid_w
 
     def get_num_image_tokens(self, image_size):
@@ -71,9 +78,6 @@ class Qwen2_5_VLAnalyst(VLMAnalyst):
         return num_patches // self.merge_size**2
 
 
-
-
 __all__ = [
-    "VLMBase",
-    "Qwen2_5_VL",
+    "Qwen2_5_VLAnalyst",
 ]
