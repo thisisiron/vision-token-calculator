@@ -1,13 +1,13 @@
 import os
 
-from .setup_env import setup_quiet_environment
+from ..setup_env import setup_quiet_environment
 
 from transformers import AutoProcessor
 from PIL import Image
 import argparse
 import numpy as np
-from .utils import get_image_files, calculate_mean, calculate_stdev
-from .printer import (
+from ..utils import get_image_files, calculate_mean, calculate_stdev
+from ..printer import (
     display_batch_results,
     display_single_image_results,
     print_processing_status,
@@ -233,3 +233,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+

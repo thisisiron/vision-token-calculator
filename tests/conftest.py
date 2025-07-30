@@ -48,7 +48,7 @@ class QwenProcessorMock:
 @pytest.fixture(autouse=True)
 def mock_cli_env(monkeypatch):
     """Mock heavy external dependencies for fast and deterministic tests."""
-    import vt_calculator.calculate as calc
+    import vt_calculator.core.calculator as calc
 
     # Mock AutoProcessor.from_pretrained to avoid network/model loading.
     monkeypatch.setattr(

@@ -28,7 +28,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "vt-calc=vt_calculator.calculate:main",
+            "vt-calc=vt_calculator.core.calculator:main",
         ],
     },
     keywords=[

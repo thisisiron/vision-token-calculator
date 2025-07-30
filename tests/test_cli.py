@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 def run_cli(capsys, argv):
-    import vt_calculator.calculate as calc
+    import vt_calculator.core.calculator as calc
 
     old_argv = sys.argv
     try:

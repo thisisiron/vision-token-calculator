@@ -81,3 +81,5 @@ class Qwen2_5_VLAnalyst(VLMAnalyst):
 __all__ = [
     "Qwen2_5_VLAnalyst",
 ]
+
+
