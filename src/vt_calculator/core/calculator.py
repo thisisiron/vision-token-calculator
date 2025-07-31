@@ -4,9 +4,9 @@ from ..setup_env import setup_quiet_environment
 
 from transformers import AutoProcessor
 from PIL import Image
-import argparse
 import numpy as np
-from ..utils import get_image_files, calculate_mean, calculate_stdev
+from ..utils import get_image_files, calculate_mean, calculate_stdev, create_dummy_image
+from ..parser import parse_arguments
 from ..printer import (
     display_batch_results,
     display_single_image_results,
@@ -17,23 +17,6 @@ from ..printer import (
 
 setup_quiet_environment()
 
-
-def create_dummy_image(width: int, height: int):
-    """
-    Create a dummy image with specified dimensions.
-
-    Args:
-        width (int): Image width in pixels
-        height (int): Image height in pixels
-
-    Returns:
-        PIL.Image.Image: PIL Image object
-    """
-    # Create a simple black image using np.zeros
-    image_array = np.zeros((height, width, 3), dtype=np.uint8)
-    image = Image.fromarray(image_array)
-
-    return image
 
 
 def count_image_tokens(image_input, model_path: str = "Qwen/Qwen2.5-VL-7B-Instruct"):
@@ -162,33 +145,7 @@ def process_directory(directory_path: str, model_path: str):
     return stats
 
 
-def parse_arguments():
-    parser = argparse.ArgumentParser(description="Vision Token Calculator")
-
-    input_group = parser.add_mutually_exclusive_group(required=True)
-
-    input_group.add_argument(
-        "--size",
-        "-s",
-        type=int,
-        nargs=2,
-        metavar=("WIDTH", "HEIGHT"),
-        help='Size of dummy image in format "WIDTH HEIGHT" (e.g., "1920 1080")',
-    )
-
-    input_group.add_argument(
-        "--image", "-i", type=str, help="Path to image file or directory"
-    )
-
-    parser.add_argument(
-        "--model-path",
-        "-m",
-        type=str,
-        default="Qwen/Qwen2.5-VL-7B-Instruct",
-        help="Model path to use (default: Qwen/Qwen2.5-VL-7B-Instruct)",
-    )
-
-    return parser.parse_args()
+ 
 
 
 def main():
