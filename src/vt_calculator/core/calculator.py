@@ -4,7 +4,6 @@ from ..setup_env import setup_quiet_environment
 
 from transformers import AutoProcessor
 from PIL import Image
-import numpy as np
 from ..utils import get_image_files, calculate_mean, calculate_stdev, create_dummy_image
 from ..parser import parse_arguments
 from ..printer import (
@@ -14,9 +13,10 @@ from ..printer import (
     print_processing_result,
     print_directory_info,
 )
+from ..analysts.analyst import Qwen2_5_VLAnalyst
+
 
 setup_quiet_environment()
-
 
 
 def count_image_tokens(image_input, model_path: str = "Qwen/Qwen2.5-VL-7B-Instruct"):
@@ -37,62 +37,15 @@ def count_image_tokens(image_input, model_path: str = "Qwen/Qwen2.5-VL-7B-Instru
     if isinstance(image_input, str):
         image_input = Image.open(image_input)
 
-    # Create messages with file path
-    messages = [
-        {
-            "role": "user",
-            "content": [
-                {
-                    "type": "image",
-                    "image": image_input,
-                }
-            ],
-        }
-    ]
+    analyst = Qwen2_5_VLAnalyst(processor)
 
-    # Preparation for inference
-    text = processor.apply_chat_template(
-        messages, tokenize=False, add_generation_prompt=True
-    )
+    # PIL.Image.size -> (width, height); analyst expects (height, width)
+    width, height = image_input.size
+    result = analyst.calculate((height, width))
 
-    image_inputs = [image_input]
-    video_inputs = None
-
-    # Process inputs
-    inputs = processor(
-        text=[text],
-        images=image_inputs,
-        videos=video_inputs,
-        padding=True,
-        return_tensors="pt",
-    )
-
-    if "qwen" in model_path.lower():
-        grid_t, grid_h, grid_w = inputs["image_grid_thw"][0].tolist()
-        reszied_height = grid_h * processor.image_processor.patch_size
-        reszied_width = grid_w * processor.image_processor.patch_size
-
-    # Calculate token counts
-    input_ids = inputs["input_ids"]
-    if processor.image_token is not None:
-        image_token = processor.image_token
-        image_token_index = processor.tokenizer.convert_tokens_to_ids(image_token)
-    elif processor.image_token_id is not None:
-        image_token_index = processor.image_token_id
-    else:
-        raise ValueError("Image token not found in processor")
-
-    num_image_tokens = (input_ids[0] == image_token_index).sum()
-
-    # Get detailed token information
-    processor_info = {
-        "number_of_image_tokens": num_image_tokens,
-        "image_size": image_input.size,
-        "image_token": processor.tokenizer.decode(image_token_index),
-        "resized_size": (reszied_width, reszied_height),
-    }
-
-    return processor_info
+    # Preserve original (width, height) in the public result
+    result["image_size"] = (width, height)
+    return result
 
 
 def process_directory(directory_path: str, model_path: str):
@@ -145,9 +98,6 @@ def process_directory(directory_path: str, model_path: str):
     return stats
 
 
- 
-
-
 def main():
     """
     Main function to demonstrate image token counting.
@@ -155,7 +105,6 @@ def main():
     args = parse_arguments()
 
     if args.image:
-        # If --image points to a directory, process it as a batch
         if os.path.isdir(args.image):
             stats = process_directory(args.image, args.model_path)
             display_batch_results(stats, args.model_path)
@@ -190,5 +139,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
