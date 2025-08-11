@@ -84,12 +84,6 @@ class VLMAnalyst:
     def __init__(self, processor):
         self.processor = processor
 
-    def get_num_image_patches(self, image_size: Tuple[int, int]) -> int:
-        raise NotImplementedError
-
-    def get_num_image_tokens(self, image_size: Tuple[int, int]) -> int:
-        raise NotImplementedError
-
     def calculate(self, image_size: Tuple[int, int]) -> dict:
         raise NotImplementedError
 
@@ -155,29 +149,36 @@ class Qwen2_5_VLAnalyst(Qwen2VLAnalyst):
 
 
 class InternVLAnalyst(VLMAnalyst):
-    def __init__(self, processor):
+    def __init__(self, processor, config):
         super().__init__(processor)
 
         self.image_token: str = "<|image_pad|>"
         self.image_start_token: str = "<img>"
         self.image_end_token: str = "</img>"
 
-        self.min_patch_size = processor.image_processor.min_patch_size
-        self.max_patch_size = processor.image_processor.max_patch_size
-        self.patch_size = processor.image_processor.patch_size
+        self.min_patches = processor.image_processor.min_patches
+        self.max_patches = processor.image_processor.max_patches
+        assert processor.image_processor.size["height"] == processor.image_processor.size["width"]
+        self.patch_size = processor.image_processor.size["height"]
+
+        assert config.vision_config.patch_size[0] == config.vision_config.patch_size[1]
+        self.vit_patch_size = config.vision_config.patch_size[0]
+        self.pixel_unshuffle_size = 2
+
+        self.image_seq_length = self.patch_size // self.vit_patch_size // self.pixel_unshuffle_size
 
     def calculate(self, image_size: Tuple[int, int]) -> dict:
         num_patches = 1
         grid_w, grid_h = get_optimal_tiled_canvas(
             image_size,
             (self.patch_size, self.patch_size),
-            self.min_patch_size,
-            self.max_patch_size,
+            self.min_patches,
+            self.max_patches,
         )
         if grid_w * grid_h > 1:
             num_patches += grid_h * grid_w
         
-        num_tokens = num_patches * (self.patch_size**2)
+        num_tokens = num_patches * (self.image_seq_length**2)
         
         return {
             "number_of_image_tokens": num_tokens,
@@ -192,4 +193,5 @@ class InternVLAnalyst(VLMAnalyst):
 __all__ = [
     "Qwen2VLAnalyst",
     "Qwen2_5_VLAnalyst",
+    "InternVLAnalyst",
 ]
