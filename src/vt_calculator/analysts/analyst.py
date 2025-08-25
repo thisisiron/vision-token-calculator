@@ -5,7 +5,9 @@ from ..utils import smart_resize
 
 
 @lru_cache(maxsize=10)
-def get_all_supported_aspect_ratios(min_image_tiles: int, max_image_tiles: int) -> list[tuple[int, int]]:
+def get_all_supported_aspect_ratios(
+    min_image_tiles: int, max_image_tiles: int
+) -> list[tuple[int, int]]:
     """
     Computes all allowed aspect ratios for a given minimum and maximum number of input tiles.
 
@@ -39,7 +41,6 @@ def get_all_supported_aspect_ratios(min_image_tiles: int, max_image_tiles: int) 
     return aspect_ratios
 
 
-
 @lru_cache(maxsize=100)
 def get_optimal_tiled_canvas(
     original_image_size: tuple[int, int],
@@ -54,7 +55,9 @@ def get_optimal_tiled_canvas(
     more tiles, until the area covered by the tiles is more than twice the target area, in order to avoid unnecessarily
     excessive tiling.
     """
-    possible_tile_arrangements = get_all_supported_aspect_ratios(min_image_tiles, max_image_tiles)
+    possible_tile_arrangements = get_all_supported_aspect_ratios(
+        min_image_tiles, max_image_tiles
+    )
 
     original_height, original_width = original_image_size
     target_tile_height, target_tile_width = target_tile_size
@@ -77,7 +80,6 @@ def get_optimal_tiled_canvas(
                 best_grid = grid
 
     return best_grid
-
 
 
 class VLMAnalyst:
@@ -147,7 +149,6 @@ class Qwen2_5_VLAnalyst(Qwen2VLAnalyst):
     pass
 
 
-
 class InternVLAnalyst(VLMAnalyst):
     def __init__(self, processor, config):
         super().__init__(processor)
@@ -158,14 +159,19 @@ class InternVLAnalyst(VLMAnalyst):
 
         self.min_patches = processor.image_processor.min_patches
         self.max_patches = processor.image_processor.max_patches
-        assert processor.image_processor.size["height"] == processor.image_processor.size["width"]
+        assert (
+            processor.image_processor.size["height"]
+            == processor.image_processor.size["width"]
+        )
         self.patch_size = processor.image_processor.size["height"]
 
         assert config.vision_config.patch_size[0] == config.vision_config.patch_size[1]
         self.vit_patch_size = config.vision_config.patch_size[0]
         self.pixel_unshuffle_size = 2
 
-        self.image_seq_length = self.patch_size // self.vit_patch_size // self.pixel_unshuffle_size
+        self.image_seq_length = (
+            self.patch_size // self.vit_patch_size // self.pixel_unshuffle_size
+        )
 
     def calculate(self, image_size: Tuple[int, int]) -> dict:
         num_patches = 1
@@ -177,9 +183,9 @@ class InternVLAnalyst(VLMAnalyst):
         )
         if grid_w * grid_h > 1:
             num_patches += grid_h * grid_w
-        
+
         num_tokens = num_patches * (self.image_seq_length**2)
-        
+
         return {
             "number_of_image_tokens": num_tokens,
             "number_of_image_patches": num_patches,
@@ -188,10 +194,3 @@ class InternVLAnalyst(VLMAnalyst):
             "image_start_token": self.image_start_token,
             "image_end_token": self.image_end_token,
         }
-
-
-__all__ = [
-    "Qwen2VLAnalyst",
-    "Qwen2_5_VLAnalyst",
-    "InternVLAnalyst",
-]

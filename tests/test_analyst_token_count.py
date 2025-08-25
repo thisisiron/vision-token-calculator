@@ -18,7 +18,9 @@ def _count_tokens_via_processor(processor, pil_image) -> int:
         }
     ]
 
-    text = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+    text = processor.apply_chat_template(
+        messages, tokenize=False, add_generation_prompt=True
+    )
 
     inputs = processor(
         text=[text],
@@ -29,7 +31,9 @@ def _count_tokens_via_processor(processor, pil_image) -> int:
     )
 
     if getattr(processor, "image_token", None) is not None:
-        image_token_index = processor.tokenizer.convert_tokens_to_ids(processor.image_token)
+        image_token_index = processor.tokenizer.convert_tokens_to_ids(
+            processor.image_token
+        )
     elif getattr(processor, "image_token_id", None) is not None:
         image_token_index = processor.image_token_id
     else:
@@ -95,5 +99,3 @@ def test_internvl_analyst_token_count_matches_transformers():
         f"Mismatch between processor-counted tokens ({counted_tokens}) and "
         f"Analyst-computed tokens ({analyst_tokens})."
     )
-
-
