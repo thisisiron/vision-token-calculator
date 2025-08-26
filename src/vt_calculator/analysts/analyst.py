@@ -153,7 +153,7 @@ class InternVLAnalyst(VLMAnalyst):
     def __init__(self, processor, config):
         super().__init__(processor)
 
-        self.image_token: str = "<|image_pad|>"
+        self.image_token: str = "<IMG_CONTEXT>"
         self.image_start_token: str = "<img>"
         self.image_end_token: str = "</img>"
 

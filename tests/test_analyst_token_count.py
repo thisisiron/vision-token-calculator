@@ -68,6 +68,11 @@ def test_analyst_token_count_matches_transformers():
     analyst = Qwen2_5_VLAnalyst(processor)
     analyst_tokens = analyst.calculate(image.size)["number_of_image_tokens"]
 
+    assert processor.image_token == analyst.image_token, (
+        f"Mismatch between processor-image token ({processor.image_token}) and "
+        f"Analyst-image token ({analyst.image_token})."
+    )
+
     assert counted_tokens == analyst_tokens, (
         f"Mismatch between processor-counted tokens ({counted_tokens}) and "
         f"Analyst-computed tokens ({analyst_tokens})."
@@ -94,6 +99,11 @@ def test_internvl_analyst_token_count_matches_transformers():
     # Use the same processor for Analyst
     analyst = InternVLAnalyst(processor, config)
     analyst_tokens = analyst.calculate(image.size)["number_of_image_tokens"]
+
+    assert processor.image_token == analyst.image_token, (
+        f"Mismatch between processor-image token ({processor.image_token}) and "
+        f"Analyst-image token ({analyst.image_token})."
+    )
 
     assert counted_tokens == analyst_tokens, (
         f"Mismatch between processor-counted tokens ({counted_tokens}) and "
