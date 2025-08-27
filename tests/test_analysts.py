@@ -1,4 +1,5 @@
 import torch
+import pytest
 from transformers import AutoProcessor, AutoConfig
 
 from vt_calculator.utils import create_dummy_image
@@ -64,39 +65,41 @@ def _assert_token_count_matches(counted_tokens: int, analyst_tokens: int) -> Non
     )
 
 
-def test_analyst_token_count_matches_transformers():
+@pytest.mark.parametrize(
+    "model_path,analyst_factory,image_size,needs_config",
+    [
+        pytest.param(
+            "Qwen/Qwen2.5-VL-7B-Instruct",
+            lambda proc, cfg: Qwen2_5_VLAnalyst(proc),
+            (256, 256),
+            False,
+            id="qwen2.5-vl",
+        ),
+        pytest.param(
+            "OpenGVLab/InternVL3-1B-hf",
+            lambda proc, cfg: InternVLAnalyst(proc, cfg),
+            (800, 800),
+            True,
+            id="internvl3",
+        ),
+    ],
+)
+def test_analyst_token_count_matches_transformers(
+    model_path, analyst_factory, image_size, needs_config
+):
+    """Parametrized test verifying analyst matches processor token behavior."""
     # Create a small deterministic image
-    image = create_dummy_image(width=256, height=256)
+    image = create_dummy_image(width=image_size[0], height=image_size[1])
 
     # Load the real processor (may download configs on first run)
-    model_path = "Qwen/Qwen2.5-VL-7B-Instruct"
     processor = AutoProcessor.from_pretrained(model_path)
+    config = AutoConfig.from_pretrained(model_path) if needs_config else None
 
     # Count tokens via processor outputs
     counted_tokens = _count_tokens_via_processor(processor, image)
 
     # Use the same processor for Analyst
-    analyst = Qwen2_5_VLAnalyst(processor)
-    analyst_tokens = analyst.calculate(image.size)["number_of_image_tokens"]
-
-    _assert_image_token_matches(processor, analyst)
-    _assert_token_count_matches(counted_tokens, analyst_tokens)
-
-
-def test_internvl_analyst_token_count_matches_transformers():
-    # Create a small deterministic image
-    image = create_dummy_image(width=800, height=800)
-
-    # Load the real processor (may download configs on first run)
-    model_path = "OpenGVLab/InternVL3-1B-hf"
-    processor = AutoProcessor.from_pretrained(model_path)
-    config = AutoConfig.from_pretrained(model_path)
-
-    # Count tokens via processor outputs
-    counted_tokens = _count_tokens_via_processor(processor, image)
-
-    # Use the same processor for Analyst
-    analyst = InternVLAnalyst(processor, config)
+    analyst = analyst_factory(processor, config)
     analyst_tokens = analyst.calculate(image.size)["number_of_image_tokens"]
 
     _assert_image_token_matches(processor, analyst)
