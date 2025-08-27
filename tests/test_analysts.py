@@ -48,12 +48,23 @@ def _count_tokens_via_processor(processor, pil_image) -> int:
     )
 
 
-def test_analyst_token_count_matches_transformers():
-    """
-    Verify that Analyst's computed token count matches the count measured from
-    the real transformers AutoProcessor outputs on a simple dummy image.
-    """
+def _assert_image_token_matches(processor, analyst) -> None:
+    """Assert that the processor and analyst image tokens match."""
+    assert processor.image_token == analyst.image_token, (
+        f"Mismatch between processor-image token ({processor.image_token}) and "
+        f"Analyst-image token ({analyst.image_token})."
+    )
 
+
+def _assert_token_count_matches(counted_tokens: int, analyst_tokens: int) -> None:
+    """Assert that the counted tokens equal the analyst-computed tokens."""
+    assert counted_tokens == analyst_tokens, (
+        f"Mismatch between processor-counted tokens ({counted_tokens}) and "
+        f"Analyst-computed tokens ({analyst_tokens})."
+    )
+
+
+def test_analyst_token_count_matches_transformers():
     # Create a small deterministic image
     image = create_dummy_image(width=256, height=256)
 
@@ -68,23 +79,11 @@ def test_analyst_token_count_matches_transformers():
     analyst = Qwen2_5_VLAnalyst(processor)
     analyst_tokens = analyst.calculate(image.size)["number_of_image_tokens"]
 
-    assert processor.image_token == analyst.image_token, (
-        f"Mismatch between processor-image token ({processor.image_token}) and "
-        f"Analyst-image token ({analyst.image_token})."
-    )
-
-    assert counted_tokens == analyst_tokens, (
-        f"Mismatch between processor-counted tokens ({counted_tokens}) and "
-        f"Analyst-computed tokens ({analyst_tokens})."
-    )
+    _assert_image_token_matches(processor, analyst)
+    _assert_token_count_matches(counted_tokens, analyst_tokens)
 
 
 def test_internvl_analyst_token_count_matches_transformers():
-    """
-    Verify that InternVL Analyst's computed token count matches the count measured from
-    the real transformers AutoProcessor outputs on a simple dummy image.
-    """
-
     # Create a small deterministic image
     image = create_dummy_image(width=800, height=800)
 
@@ -100,12 +99,5 @@ def test_internvl_analyst_token_count_matches_transformers():
     analyst = InternVLAnalyst(processor, config)
     analyst_tokens = analyst.calculate(image.size)["number_of_image_tokens"]
 
-    assert processor.image_token == analyst.image_token, (
-        f"Mismatch between processor-image token ({processor.image_token}) and "
-        f"Analyst-image token ({analyst.image_token})."
-    )
-
-    assert counted_tokens == analyst_tokens, (
-        f"Mismatch between processor-counted tokens ({counted_tokens}) and "
-        f"Analyst-computed tokens ({analyst_tokens})."
-    )
+    _assert_image_token_matches(processor, analyst)
+    _assert_token_count_matches(counted_tokens, analyst_tokens)
