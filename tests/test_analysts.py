@@ -69,7 +69,7 @@ def _assert_token_count_matches(counted_tokens: int, analyst_tokens: int) -> Non
     "model_path,analyst_factory,image_size,needs_config",
     [
         pytest.param(
-            "Qwen/Qwen2.5-VL-7B-Instruct",
+            "Qwen/Qwen2.5-VL-3B-Instruct",
             lambda proc, cfg: Qwen2_5_VLAnalyst(proc),
             (256, 256),
             False,

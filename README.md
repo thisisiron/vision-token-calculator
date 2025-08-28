@@ -68,13 +68,35 @@ Number of Image Tokens : 256
 ==================================================
 ```
 
+### Example output (multi image)
+```text
+Processing directory: test_images/
+Found 8 images to process...
+
+[1/8] Processing: test_1_640x480.jpg ✓ (391 tokens)
+[2/8] Processing: test_2_800x600.jpg ✓ (609 tokens)
+[3/8] Processing: test_3_1024x768.jpg ✓ (999 tokens)
+[4/8] Processing: test_4_1280x720.jpg ✓ (1196 tokens)
+[5/8] Processing: test_5_1920x1080.jpg ✓ (2691 tokens)
+[6/8] Processing: test_6_512x512.jpg ✓ (324 tokens)
+[7/8] Processing: test_7_256x256.jpg ✓ (81 tokens)
+[8/8] Processing: test_8_2048x1536.jpg ✓ (4015 tokens)
+
+==================================================
+ BATCH ANALYSIS RESULTS 
+==================================================
+Model                     : Qwen/Qwen2.5-VL-7B-Instruct
+Total Images Processed    : 8
+Average Vision Tokens     : 1288.2
+Minimum Vision Tokens     : 81
+Maximum Vision Tokens     : 4015
+Standard Deviation        : 1370.5
+==================================================
+```
+
 ## Supported Models
 
-| Model | Model size |
-|------------|------------|
-| Qwen2.5-VL | 3B / 7B / 32B / 72B |
-| Gemma3 | 4B / 12B / 27B |
-| InternVL3 | 1B / 2B / 8B / 14B / 38B / 78B |
+Qwen2-VL, Qwen2.5-VL, InternVL3
 
 
 ## License
