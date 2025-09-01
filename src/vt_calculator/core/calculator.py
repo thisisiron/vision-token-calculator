@@ -6,13 +6,13 @@ from transformers import AutoProcessor
 from PIL import Image
 from ..utils import get_image_files, calculate_mean, calculate_stdev, create_dummy_image
 from ..parser import parse_arguments
-from ..printer import (
+from ..reporter import (
     display_batch_results,
-    display_single_image_results,
     print_processing_status,
     print_processing_result,
     print_directory_info,
 )
+from ..reporter import Reporter
 from ..analysts.analyst import Qwen2_5_VLAnalyst
 
 
@@ -41,10 +41,21 @@ def count_image_tokens(image_input, model_path: str = "Qwen/Qwen2.5-VL-7B-Instru
 
     # PIL.Image.size -> (width, height); analyst expects (height, width)
     width, height = image_input.size
-    result = analyst.calculate((height, width))
+    result = analyst.calculate((width, height))
 
-    # Preserve original (width, height) in the public result
-    result["image_size"] = (width, height)
+    # Backward-compatible total token count for batch statistics
+    if (
+        isinstance(result.get("image_token"), (list, tuple))
+        and isinstance(result.get("image_start_token"), (list, tuple))
+        and isinstance(result.get("image_end_token"), (list, tuple))
+    ):
+        total_tokens = (
+            int(result["image_token"][1])
+            + int(result["image_start_token"][1])
+            + int(result["image_end_token"][1])
+        )
+        result["number_of_image_tokens"] = total_tokens
+
     return result
 
 
@@ -115,8 +126,9 @@ def main():
             # Calculate tokens
             result = count_image_tokens(args.image, args.model_path)
 
-            # Display results
-            display_single_image_results(
+            # Display results using Reporter
+            reporter = Reporter()
+            reporter.display_single_image_results(
                 result, args.model_path, f"Existing image: {args.image}"
             )
 
@@ -129,8 +141,9 @@ def main():
         # Calculate tokens
         result = count_image_tokens(image_input, args.model_path)
 
-        # Display results
-        display_single_image_results(
+        # Display results using Reporter
+        reporter = Reporter()
+        reporter.display_single_image_results(
             result, args.model_path, f"Dummy image: {width} x {height}"
         )
 

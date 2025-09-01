@@ -10,7 +10,7 @@ __author__ = "Vision Token Calculator"
 
 from .core.calculator import count_image_tokens, process_directory
 from .utils import create_dummy_image
-from .printer import display_batch_results, display_single_image_results
+from .reporter import display_batch_results, display_single_image_results
 
 __all__ = [
     "count_image_tokens",
