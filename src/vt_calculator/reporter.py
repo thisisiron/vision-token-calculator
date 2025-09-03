@@ -60,12 +60,17 @@ def print_directory_info(directory_path: str, file_count: int):
 class Reporter:
     """Reporter for displaying single-image analysis results."""
 
-    def __init__(self):
-        pass
+    def __init__(self, label_width: int = 24):
+        self.label_width = label_width
 
-    def _label_from_key(self, key: str) -> str:
-        key = key.replace("_token", "").strip()
-        return " ".join(part.capitalize() for part in key.split("_"))
+
+    def _print_kv(self, label: str, value: str, label_width: int = None) -> None:
+        if label_width is None:
+            label_width = self.label_width
+        padding = " " * max(1, label_width - len(label))
+        print(f"{label}{padding}: {value}")
+
+    
 
     def display_single_image_results(
         self, result: dict, model_path: str, image_source: str = None
@@ -82,22 +87,26 @@ class Reporter:
         print(" VISION TOKEN ANALYSIS RESULTS ")
         print(SEPARATOR)
 
-        print(f"Model                  : {model_path}")
+        # MODEL INFO
+        print()
+        print("[MODEL INFO]")
+        self._print_kv("Model Name", model_path)
+
+        # IMAGE INFO
+        print()
+        print("[IMAGE INFO]")
         if image_source:
-            print(f"Image Source           : {image_source}")
+            self._print_kv("Image Source", image_source)
 
         if "image_size" in result and isinstance(result["image_size"], (list, tuple)):
-            print(
-                f"Original Image Size (W x H)     : {result['image_size'][0]} x {result['image_size'][1]}"
+            self._print_kv(
+                "Original Size (W x H)", f"{result['image_size'][0]} x {result['image_size'][1]}"
             )
 
         if "resized_size" in result and isinstance(result["resized_size"], (list, tuple)):
-            print(
-                f"Resized Image Size (W x H) : {result['resized_size'][0]} x {result['resized_size'][1]}"
+            self._print_kv(
+                "Resized Size (W x H)", f"{result['resized_size'][0]} x {result['resized_size'][1]}"
             )
-
-        if "number_of_image_patches" in result:
-            print(f"Number of Image Patches : {result['number_of_image_patches']}")
 
         # Print token tuples like (token_name, count) in a compact block
         tokens_to_show = []
@@ -113,8 +122,12 @@ class Reporter:
         if tokens_to_show:
             print()
             print("[TOKEN INFO]")
+            # Use a shared width so the colon aligns with the KV sections.
+            max_name_len = max(len(str(name)) for name, _ in tokens_to_show)
+            width = max(self.label_width, max_name_len)
             for token_name, token_count in tokens_to_show:
-                print(f"{token_name}: {token_count}")
+                name_padded = str(token_name).ljust(width)
+                print(f"{name_padded} : {token_count}")
 
         print(SEPARATOR)
 

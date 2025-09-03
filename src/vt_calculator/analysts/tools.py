@@ -121,7 +121,7 @@ def resize_and_grid(
     min_pixels: int,
     max_pixels: int,
 ):
-    height, width = image_size
+    width, height = image_size
     factor = patch_size * merge_size
     resized_h, resized_w = smart_resize(
         height, width, factor, min_pixels, max_pixels

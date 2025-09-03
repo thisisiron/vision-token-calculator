@@ -144,7 +144,7 @@ def main():
         # Display results using Reporter
         reporter = Reporter()
         reporter.display_single_image_results(
-            result, args.model_path, f"Dummy image: {width} x {height}"
+            result, args.model_path, f"Dummy image"
         )
 
     return 0
