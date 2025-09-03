@@ -63,14 +63,11 @@ class Reporter:
     def __init__(self, label_width: int = 24):
         self.label_width = label_width
 
-
     def _print_kv(self, label: str, value: str, label_width: int = None) -> None:
         if label_width is None:
             label_width = self.label_width
         padding = " " * max(1, label_width - len(label))
         print(f"{label}{padding}: {value}")
-
-    
 
     def display_single_image_results(
         self, result: dict, model_path: str, image_source: str = None
@@ -100,12 +97,16 @@ class Reporter:
 
         if "image_size" in result and isinstance(result["image_size"], (list, tuple)):
             self._print_kv(
-                "Original Size (W x H)", f"{result['image_size'][0]} x {result['image_size'][1]}"
+                "Original Size (W x H)",
+                f"{result['image_size'][0]} x {result['image_size'][1]}",
             )
 
-        if "resized_size" in result and isinstance(result["resized_size"], (list, tuple)):
+        if "resized_size" in result and isinstance(
+            result["resized_size"], (list, tuple)
+        ):
             self._print_kv(
-                "Resized Size (W x H)", f"{result['resized_size'][0]} x {result['resized_size'][1]}"
+                "Resized Size (W x H)",
+                f"{result['resized_size'][0]} x {result['resized_size'][1]}",
             )
 
         # Print token tuples like (token_name, count) in a compact block
@@ -132,9 +133,9 @@ class Reporter:
         print(SEPARATOR)
 
 
-def display_single_image_results(result: dict, model_path: str, image_source: str = None) -> None:
+def display_single_image_results(
+    result: dict, model_path: str, image_source: str = None
+) -> None:
     """Compatibility wrapper that uses Reporter to display single image results."""
     reporter = Reporter()
     reporter.display_single_image_results(result, model_path, image_source)
-
-

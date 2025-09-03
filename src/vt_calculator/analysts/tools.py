@@ -2,6 +2,7 @@ from functools import lru_cache
 from typing import Tuple
 import math
 
+
 @lru_cache(maxsize=10)
 def get_all_supported_aspect_ratios(
     min_image_tiles: int, max_image_tiles: int
@@ -123,9 +124,7 @@ def resize_and_grid(
 ):
     width, height = image_size
     factor = patch_size * merge_size
-    resized_h, resized_w = smart_resize(
-        height, width, factor, min_pixels, max_pixels
-    )
+    resized_h, resized_w = smart_resize(height, width, factor, min_pixels, max_pixels)
     grid_h = resized_h // patch_size
     grid_w = resized_w // patch_size
     return resized_h, resized_w, grid_h, grid_w

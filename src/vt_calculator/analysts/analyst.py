@@ -71,7 +71,7 @@ class InternVLAnalyst(VLMAnalyst):
         self.vit_patch_size = config.vision_config.patch_size[0]
         self.pixel_unshuffle_size = 2
 
-        # 
+        #
         self.image_seq_length = (
             self.patch_size // self.vit_patch_size // self.pixel_unshuffle_size
         )
