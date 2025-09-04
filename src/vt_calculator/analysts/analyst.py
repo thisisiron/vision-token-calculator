@@ -8,6 +8,15 @@ class VLMAnalyst:
         self.processor = processor
 
     def calculate(self, image_size: Tuple[int, int]) -> dict:
+        """
+        Calculate the number of image tokens for a given image size.
+
+        Args:
+            image_size (Tuple[int, int]): The size of the image in (width, height) format.
+
+        Returns:
+            dict: A dictionary containing the number of image tokens and other relevant information.
+        """
         raise NotImplementedError
 
 
