@@ -1,4 +1,4 @@
-SEPARATOR = "=" * 50
+SEPARATOR = "=" * 72
 
 
 def display_batch_results(stats: dict, model_path: str):
@@ -60,7 +60,7 @@ def print_directory_info(directory_path: str, file_count: int):
 class Reporter:
     """Reporter for displaying single-image analysis results."""
 
-    def __init__(self, label_width: int = 24):
+    def __init__(self, label_width: int = 42):
         self.label_width = label_width
 
     def _print_kv(self, label: str, value: str, label_width: int = None) -> None:
@@ -84,6 +84,21 @@ class Reporter:
         print(" VISION TOKEN ANALYSIS RESULTS ")
         print(SEPARATOR)
 
+        # Prepare token info (labels derived from keys)
+        items_to_show = []
+        for key in [
+            "image_token",
+            "image_start_token",
+            "image_end_token",
+        ]:
+            value = result.get(key)
+            if isinstance(value, (list, tuple)) and len(value) == 2:
+                token_symbol, token_count = value
+                # Derive human-readable label from key
+                display_label = key.replace("_", " ").title()
+                display_name = f"{display_label} ({token_symbol})"
+                items_to_show.append((display_name, token_count))
+
         # MODEL INFO
         print()
         print("[MODEL INFO]")
@@ -92,43 +107,24 @@ class Reporter:
         # IMAGE INFO
         print()
         print("[IMAGE INFO]")
-        if image_source:
-            self._print_kv("Image Source", image_source)
+        self._print_kv("Image Source", image_source)
 
-        if "image_size" in result and isinstance(result["image_size"], (list, tuple)):
-            self._print_kv(
-                "Original Size (W x H)",
-                f"{result['image_size'][0]} x {result['image_size'][1]}",
-            )
+        self._print_kv(
+            "Original Size (W x H)",
+            f"{result['image_size'][0]} x {result['image_size'][1]}",
+        )
 
-        if "resized_size" in result and isinstance(
-            result["resized_size"], (list, tuple)
-        ):
-            self._print_kv(
-                "Resized Size (W x H)",
-                f"{result['resized_size'][0]} x {result['resized_size'][1]}",
-            )
+        self._print_kv(
+            "Resized Size (W x H)",
+            f"{result['resized_size'][0]} x {result['resized_size'][1]}",
+        )
 
-        # Print token tuples like (token_name, count) in a compact block
-        tokens_to_show = []
-        for key in [
-            "image_token",
-            "image_start_token",
-            "image_end_token",
-        ]:
-            value = result.get(key)
-            if isinstance(value, (list, tuple)) and len(value) == 2:
-                tokens_to_show.append(value)
-
-        if tokens_to_show:
+        if items_to_show:
             print()
             print("[TOKEN INFO]")
-            # Use a shared width so the colon aligns with the KV sections.
-            max_name_len = max(len(str(name)) for name, _ in tokens_to_show)
-            width = max(self.label_width, max_name_len)
-            for token_name, token_count in tokens_to_show:
-                name_padded = str(token_name).ljust(width)
-                print(f"{name_padded} : {token_count}")
+            # Use the configured label width for uniform alignment
+            for display_name, token_count in items_to_show:
+                self._print_kv(display_name, str(token_count))
 
         print(SEPARATOR)
 

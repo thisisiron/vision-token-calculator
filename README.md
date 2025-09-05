@@ -35,7 +35,7 @@ vt-calc --image path/to/your/image.jpg
 # Directory (batch processing)
 vt-calc --image path/to/your/images_dir
 
-# Dummy image with specific dimensions
+# Dummy image with specific dimensions (Width x Height)
 vt-calc --size 1920 1080
 
 # Specify a different model (Hugging Face model id)
