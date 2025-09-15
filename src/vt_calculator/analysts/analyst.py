@@ -51,6 +51,7 @@ class Qwen2VLAnalyst(VLMAnalyst):
             "number_of_image_patches": num_patches,
             "grid_size": (grid_w, grid_h),
             "patch_size": self.vit_patch_size,
+            "has_global_patch": False,
             "image_size": image_size,
             "resized_size": (resized_w, resized_h),
             "image_token": (self.image_token, num_tokens),
@@ -112,5 +113,5 @@ class InternVLAnalyst(VLMAnalyst):
             "image_token": (self.image_token, num_tokens),
             "image_start_token": (self.image_start_token, 1),
             "image_end_token": (self.image_end_token, 1),
-            "image_token_format": f"{self.image_start_token}{self.image_token}*{num_tokens}{self.image_end_token}",
+            "image_token_format": f"{self.image_start_token}{self.image_token}*{self.image_seq_length}{self.image_token}*{self.image_seq_length}...{self.image_end_token}",
         }
