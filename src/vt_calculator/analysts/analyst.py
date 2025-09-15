@@ -53,6 +53,7 @@ class Qwen2VLAnalyst(VLMAnalyst):
             "image_token": (self.image_token, num_tokens),
             "image_start_token": (self.image_start_token, 1),
             "image_end_token": (self.image_end_token, 1),
+            "image_token_format": f"{self.image_start_token}{self.image_token}*{num_tokens}{self.image_end_token}",
         }
 
 
@@ -104,4 +105,5 @@ class InternVLAnalyst(VLMAnalyst):
             "image_token": (self.image_token, num_tokens),
             "image_start_token": (self.image_start_token, 1),
             "image_end_token": (self.image_end_token, 1),
+            "image_token_format": f"{self.image_start_token}{self.image_token}*{num_tokens}{self.image_end_token}",
         }
