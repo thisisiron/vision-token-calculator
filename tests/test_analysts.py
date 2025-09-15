@@ -49,10 +49,23 @@ def _count_tokens_via_processor(processor, pil_image) -> int:
     )
 
 
+def _get_processor_image_token_str(processor) -> str:
+    """Return the processor's image token as a string, with id fallback."""
+    if getattr(processor, "image_token", None) is not None:
+        return processor.image_token
+    if getattr(processor, "image_token_id", None) is not None:
+        token = processor.tokenizer.convert_ids_to_tokens(processor.image_token_id)
+        if isinstance(token, list):
+            token = token[0]
+        return token
+    raise AssertionError("Processor has no image token or image token id")
+
+
 def _assert_image_token_matches(processor, analyst) -> None:
     """Assert that the processor and analyst image tokens match."""
-    assert processor.image_token == analyst.image_token, (
-        f"Mismatch between processor-image token ({processor.image_token}) and "
+    proc_token = _get_processor_image_token_str(processor)
+    assert proc_token == analyst.image_token, (
+        f"Mismatch between processor-image token ({proc_token}) and "
         f"Analyst-image token ({analyst.image_token})."
     )
 
@@ -100,7 +113,9 @@ def test_analyst_token_count_matches_transformers(
 
     # Use the same processor for Analyst
     analyst = analyst_factory(processor, config)
-    analyst_tokens = analyst.calculate(image.size)["number_of_image_tokens"]
+    result = analyst.calculate(image.size)
+    # Compare only the number of image tokens (not including wrapper tokens)
+    analyst_tokens = int(result["image_token"][1])
 
     _assert_image_token_matches(processor, analyst)
     _assert_token_count_matches(counted_tokens, analyst_tokens)

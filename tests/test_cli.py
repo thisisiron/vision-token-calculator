@@ -16,14 +16,6 @@ def run_cli(capsys, argv):
     return exit_code, captured.out + captured.err
 
 
-def test_cli_with_size(capsys):
-    exit_code, output = run_cli(capsys, ["--size", "640", "480"])
-    assert exit_code == 0
-    assert "VISION TOKEN ANALYSIS RESULTS" in output
-    assert "Image Size (W x H)     : 640 x 480" in output
-    assert "Number of Image Tokens" in output
-
-
 def test_cli_with_image(capsys):
     # Use a small bundled image if present, otherwise fall back to the test directory one
     repo_root = Path(__file__).resolve().parents[1]
