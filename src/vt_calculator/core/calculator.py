@@ -2,7 +2,7 @@ import os
 
 from ..setup_env import setup_quiet_environment
 
-from transformers import AutoProcessor
+from transformers import AutoProcessor, AutoConfig
 from PIL import Image
 from ..utils import get_image_files, calculate_mean, calculate_stdev, create_dummy_image
 from ..parser import parse_arguments
@@ -13,7 +13,7 @@ from ..reporter import (
     print_directory_info,
 )
 from ..reporter import Reporter
-from ..analysts.analyst import Qwen2_5_VLAnalyst
+from ..analysts import InternVLAnalyst, get_analyst_class_for_model
 
 
 setup_quiet_environment()
@@ -37,7 +37,14 @@ def count_image_tokens(image_input, model_path: str = "Qwen/Qwen2.5-VL-7B-Instru
     if isinstance(image_input, str):
         image_input = Image.open(image_input)
 
-    analyst = Qwen2_5_VLAnalyst(processor)
+    AnalystClass = get_analyst_class_for_model(model_path)
+
+    # Some analysts (InternVL) require config as well
+    if AnalystClass is InternVLAnalyst:
+        config = AutoConfig.from_pretrained(model_path)
+        analyst = AnalystClass(processor, config)
+    else:
+        analyst = AnalystClass(processor)
 
     # PIL.Image.size -> (width, height); analyst expects (height, width)
     width, height = image_input.size
@@ -128,9 +135,7 @@ def main():
 
             # Display results using Reporter
             reporter = Reporter()
-            reporter.print(
-                result, args.model_path, f"{args.image}"
-            )
+            reporter.print(result, args.model_path, f"{args.image}")
 
     elif args.size:
         # Create dummy image with specified dimensions

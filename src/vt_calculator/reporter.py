@@ -69,9 +69,7 @@ class Reporter:
         padding = " " * max(1, label_width - len(label))
         print(f"{label}{padding}: {value}")
 
-    def print(
-        self, result: dict, model_path: str, image_source: str = None
-    ) -> None:
+    def print(self, result: dict, model_path: str, image_source: str = None) -> None:
         """
         Display single image analysis results.
 
@@ -117,6 +115,21 @@ class Reporter:
         self._print_kv(
             "Resized Size (W x H)",
             f"{result['resized_size'][0]} x {result['resized_size'][1]}",
+        )
+
+        print()
+        print("[PATCH INFO]")
+        self._print_kv(
+            "Patch Size",
+            f"{result['patch_size']}",
+        )
+        self._print_kv(
+            "Grid Size (W x H)",
+            f"{result['grid_size'][0]} x {result['grid_size'][1]}",
+        )
+        self._print_kv(
+            "Number of Patches",
+            f"{result['number_of_image_patches']} ({'global patch' if result['has_global_patch'] else ''})",
         )
 
         if items_to_show:
