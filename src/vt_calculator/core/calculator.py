@@ -128,7 +128,7 @@ def main():
 
             # Display results using Reporter
             reporter = Reporter()
-            reporter.display_single_image_results(
+            reporter.print(
                 result, args.model_path, f"{args.image}"
             )
 
@@ -143,7 +143,7 @@ def main():
 
         # Display results using Reporter
         reporter = Reporter()
-        reporter.display_single_image_results(result, args.model_path, "Dummy image")
+        reporter.print(result, args.model_path, "Dummy image")
 
     return 0
 

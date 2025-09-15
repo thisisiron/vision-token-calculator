@@ -10,7 +10,7 @@ def display_batch_results(stats: dict, model_path: str):
         model_path (str): Model path used for processing
     """
     print("\n" + SEPARATOR)
-    print(" BATCH ANALYSIS RESULTS ")
+    print(" BATCH ANALYSIS REPORT ")
     print(SEPARATOR)
 
     print(f"Model                     : {model_path}")
@@ -69,7 +69,7 @@ class Reporter:
         padding = " " * max(1, label_width - len(label))
         print(f"{label}{padding}: {value}")
 
-    def display_single_image_results(
+    def print(
         self, result: dict, model_path: str, image_source: str = None
     ) -> None:
         """
@@ -81,7 +81,7 @@ class Reporter:
             image_source (str): Optional description of image source
         """
         print("\n" + SEPARATOR)
-        print(" VISION TOKEN ANALYSIS RESULTS ")
+        print(" VISION TOKEN ANALYSIS REPORT ")
         print(SEPARATOR)
 
         # Prepare token info (labels derived from keys)
@@ -127,11 +127,3 @@ class Reporter:
                 self._print_kv(display_name, str(token_count))
 
         print(SEPARATOR)
-
-
-def display_single_image_results(
-    result: dict, model_path: str, image_source: str = None
-) -> None:
-    """Compatibility wrapper that uses Reporter to display single image results."""
-    reporter = Reporter()
-    reporter.display_single_image_results(result, model_path, image_source)
