@@ -1,5 +1,7 @@
 import argparse
 
+from .analysts import SUPPORTED_MODELS, DEFAULT_MODEL
+
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Vision Token Calculator")
@@ -20,11 +22,12 @@ def parse_arguments():
     )
 
     parser.add_argument(
-        "--model-path",
+        "--model-name",
         "-m",
         type=str,
-        default="Qwen/Qwen2.5-VL-7B-Instruct",
-        help="Model path to use (default: Qwen/Qwen2.5-VL-7B-Instruct)",
+        choices=sorted(SUPPORTED_MODELS),
+        default=DEFAULT_MODEL,
+        help=f"Short model name to use (default: {DEFAULT_MODEL})",
     )
 
     return parser.parse_args()

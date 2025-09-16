@@ -38,8 +38,8 @@ vt-calc --image path/to/your/images_dir
 # Dummy image with specific dimensions (Width x Height)
 vt-calc --size 1920 1080
 
-# Specify a different model (Hugging Face model id)
-vt-calc --image path/to/your/image.jpg --model-path "Qwen/Qwen2.5-VL-7B-Instruct"
+# Choose a short model name (default: qwen2.5-vl)
+vt-calc --image path/to/your/image.jpg -m qwen2.5-vl
 
 # Show help
 vt-calc --help
@@ -49,7 +49,7 @@ vt-calc --help
 
 - `-i, --image`: Path to an image file or a directory of images
 - `-s, --size WIDTH HEIGHT`: Create a dummy image of the given size
-- `-m, --model-path`: Model to use (default: `Qwen/Qwen2.5-VL-7B-Instruct`)
+- `-m, --model-name`: Short model name to use (default: `qwen2.5-vl`)
 
 Supported input formats for directory processing: `.jpg`, `.jpeg`, `.png`, `.webp` (case-insensitive).
 

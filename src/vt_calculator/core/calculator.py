@@ -13,38 +13,29 @@ from ..reporter import (
     print_directory_info,
 )
 from ..reporter import Reporter
-from ..analysts import InternVLAnalyst, get_analyst_class_for_model
+from ..analysts import load_analyst, DEFAULT_MODEL
 
 
 setup_quiet_environment()
 
 
-def count_image_tokens(image_input, model_path: str = "Qwen/Qwen2.5-VL-7B-Instruct"):
+def count_image_tokens(image_input, model_name: str = DEFAULT_MODEL):
     """
     Calculate the number of image tokens generated when processing an image.
 
     Args:
         image_input: Either a file path (str) or PIL Image object
-        model_path (str): Model path to use for processing
+        model_name (str): Short model name to use for processing
 
     Returns:
         dict: Dictionary containing token counts and details
     """
 
-    # Load only the processor (no need for the full model)
-    processor = AutoProcessor.from_pretrained(model_path)
+    # Build analyst via factory (handles aliases and config requirements)
+    analyst = load_analyst(model_name)
 
     if isinstance(image_input, str):
         image_input = Image.open(image_input)
-
-    AnalystClass = get_analyst_class_for_model(model_path)
-
-    # Some analysts (InternVL) require config as well
-    if AnalystClass is InternVLAnalyst:
-        config = AutoConfig.from_pretrained(model_path)
-        analyst = AnalystClass(processor, config)
-    else:
-        analyst = AnalystClass(processor)
 
     # PIL.Image.size -> (width, height); analyst expects (height, width)
     width, height = image_input.size
@@ -66,13 +57,13 @@ def count_image_tokens(image_input, model_path: str = "Qwen/Qwen2.5-VL-7B-Instru
     return result
 
 
-def process_directory(directory_path: str, model_path: str):
+def process_directory(directory_path: str, model_name: str):
     """
     Process all images in a directory and calculate batch statistics.
 
     Args:
         directory_path (str): Path to directory containing images
-        model_path (str): Model path to use for processing
+        model_name (str): Short model name to use for processing
 
     Returns:
         dict: Dictionary containing batch statistics
@@ -93,7 +84,7 @@ def process_directory(directory_path: str, model_path: str):
         filename = os.path.basename(image_file)
         print_processing_status(filename, i, len(image_files))
 
-        result = count_image_tokens(image_file, model_path)
+        result = count_image_tokens(image_file, model_name)
         token_count = int(result["number_of_image_tokens"])
         token_counts.append(token_count)
         processed_files.append(
@@ -124,18 +115,18 @@ def main():
 
     if args.image:
         if os.path.isdir(args.image):
-            stats = process_directory(args.image, args.model_path)
-            display_batch_results(stats, args.model_path)
+            stats = process_directory(args.image, args.model_name)
+            display_batch_results(stats, args.model_name)
         else:
             # Use existing single image file
             print(f"Using existing image: {args.image}")
 
             # Calculate tokens
-            result = count_image_tokens(args.image, args.model_path)
+            result = count_image_tokens(args.image, args.model_name)
 
             # Display results using Reporter
             reporter = Reporter()
-            reporter.print(result, args.model_path, f"{args.image}")
+            reporter.print(result, args.model_name, f"{args.image}")
 
     elif args.size:
         # Create dummy image with specified dimensions
@@ -144,11 +135,11 @@ def main():
         print(f"Using dummy image: {width} x {height}")
 
         # Calculate tokens
-        result = count_image_tokens(image_input, args.model_path)
+        result = count_image_tokens(image_input, args.model_name)
 
         # Display results using Reporter
         reporter = Reporter()
-        reporter.print(result, args.model_path, "Dummy image")
+        reporter.print(result, args.model_name, "Dummy image")
 
     return 0
 

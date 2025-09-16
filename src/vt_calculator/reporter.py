@@ -1,19 +1,19 @@
 SEPARATOR = "=" * 72
 
 
-def display_batch_results(stats: dict, model_path: str):
+def display_batch_results(stats: dict, model_name: str):
     """
     Display batch processing results.
 
     Args:
         stats (dict): Statistics dictionary from process_directory
-        model_path (str): Model path used for processing
+        model_name (str): Short model name used for processing
     """
     print("\n" + SEPARATOR)
     print(" BATCH ANALYSIS REPORT ")
     print(SEPARATOR)
 
-    print(f"Model                     : {model_path}")
+    print(f"Model                     : {model_name}")
     print(f"Total Images Processed    : {stats['total_processed']}")
     if stats["total_failed"] > 0:
         print(f"Total Images Failed       : {stats['total_failed']}")
@@ -69,13 +69,13 @@ class Reporter:
         padding = " " * max(1, label_width - len(label))
         print(f"{label}{padding}: {value}")
 
-    def print(self, result: dict, model_path: str, image_source: str = None) -> None:
+    def print(self, result: dict, model_name: str, image_source: str = None) -> None:
         """
         Display single image analysis results.
 
         Args:
             result (dict): Token count result dictionary
-            model_path (str): Model path used for processing
+            model_name (str): Short model name used for processing
             image_source (str): Optional description of image source
         """
         print("\n" + SEPARATOR)
@@ -100,7 +100,7 @@ class Reporter:
         # MODEL INFO
         print()
         print("[MODEL INFO]")
-        self._print_kv("Model Name", model_path)
+        self._print_kv("Model Name", model_name)
 
         # IMAGE INFO
         print()
@@ -129,14 +129,13 @@ class Reporter:
         )
         self._print_kv(
             "Number of Patches",
-            f"{result['number_of_image_patches']} ({'global patch' if result['has_global_patch'] else ''})",
+            f"{result['number_of_image_patches']} {'(global patch)' if result['has_global_patch'] else ''}",
         )
 
         if items_to_show:
             print()
             print("[TOKEN INFO]")
             print(f"Image Token Format:\n    {result['image_token_format']}")
-            # Use the configured label width for uniform alignment
             for display_name, token_count in items_to_show:
                 self._print_kv(display_name, str(token_count))
 
