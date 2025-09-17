@@ -1,8 +1,11 @@
-from .analyst import Qwen2VLAnalyst, Qwen2_5_VLAnalyst, InternVLAnalyst
+from .analyst import Qwen2VLAnalyst, Qwen2_5_VLAnalyst, InternVLAnalyst, LLaVAAnalyst
 from transformers import AutoProcessor, AutoConfig
+from typing import Callable, Dict, Tuple
 
 
 SUPPORTED_MODELS: set[str] = {
+    "llava",
+    "qwen2-vl",
     "qwen2.5-vl",
     "internvl3",
 }
@@ -10,7 +13,9 @@ SUPPORTED_MODELS: set[str] = {
 # Mapping from short model name to Hugging Face repository id
 MODEL_TO_HF_ID: dict[str, str] = {
     "qwen2.5-vl": "Qwen/Qwen2.5-VL-3B-Instruct",
+    "qwen2-vl": "Qwen/Qwen2-VL-2B-Instruct",
     "internvl3": "OpenGVLab/InternVL3-1B-hf",
+    "llava": "llava-hf/llava-1.5-7b-hf"
 }
 
 # Default short model name used across the app when none is provided
@@ -33,21 +38,38 @@ def map_model_id(model_name: str) -> str:
 
 
 def load_analyst(model_name: str = DEFAULT_MODEL):
-    """Factory that builds the correct analyst for a given short model name."""
+    """Factory that builds the correct analyst for a given short model name.
+
+    Selection is handled via a small registry mapping so it is easy to extend
+    with additional models without modifying conditional logic.
+    """
     model_id = map_model_id(model_name)
 
-    # Choose analyst class by family
     key = model_name.strip().lower()
-    is_internvl = key.startswith("internvl3")
+
+    # Analyst builders receive (processor, config) and must return an instance
+    # of a VLMAnalyst subclass. The config argument may be ignored when not
+    # needed by the analyst.
+    ANALYST_REGISTRY: Dict[str, Tuple[Callable, bool]] = {
+        # Qwen family (no config needed when instantiating the analyst)
+        "qwen2.5-vl": (lambda proc, cfg: Qwen2_5_VLAnalyst(proc), False),
+        "qwen2-vl": (lambda proc, cfg: Qwen2VLAnalyst(proc), False),
+        # InternVL family (requires model config)
+        "internvl3": (lambda proc, cfg: InternVLAnalyst(proc, cfg), True),
+        # NOTE: LLaVA is listed as supported for mapping, but no working analyst
+        # implementation is registered yet. Register here when implemented.
+        # "llava": (lambda proc, cfg: LLaVAAnalyst(proc), False),
+    }
+
+    if key not in ANALYST_REGISTRY:
+        raise ValueError(f"No analyst registered for model: {model_name}")
+
+    builder, needs_config = ANALYST_REGISTRY[key]
 
     processor = AutoProcessor.from_pretrained(model_id)
-    if is_internvl:
-        config = AutoConfig.from_pretrained(model_id)
-        analyst = InternVLAnalyst(processor, config)
-    else:
-        analyst = Qwen2_5_VLAnalyst(processor)
+    config = AutoConfig.from_pretrained(model_id) if needs_config else None
 
-    return analyst
+    return builder(processor, config)
 
 
 __all__ = [
