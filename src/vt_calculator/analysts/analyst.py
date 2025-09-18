@@ -20,6 +20,36 @@ class VLMAnalyst:
         raise NotImplementedError
 
 
+class LLaVAAnalyst(VLMAnalyst):
+    def __init__(self, processor):
+        super().__init__(processor)
+
+        self.image_token: str = "<image>"
+
+        self.resized_height, self.resized_width = processor.image_processor.crop_size  # (336, 336)
+        
+        self.patch_size = processor.patch_size
+        self.num_additional_image_tokens = processor.num_additional_image_tokens  # such as CLS (+1)
+        self.vision_feature_select_strategy = processor.vision_feature_select_strategy
+        
+    
+    def calculate(self, image_size: Tuple[int, int]) -> dict:
+        width, height = image_size
+
+        num_tokens = (self.resized_height // self.patch_size) * (self.resized_width // self.patch_size) + self.num_additional_image_tokens
+        if self.vision_feature_select_strategy == "default":
+            num_tokens -= 1  # CLS token is excluded in the default strategy
+
+        return {
+            "number_of_image_patches": num_tokens,
+            "patch_size": self.patch_size,
+            "has_global_patch": False,
+            "image_size": image_size,
+            "resized_size": (self.resized_width, self.resized_height),
+            "image_token": (self.image_token, num_tokens),
+        }
+        
+
 class Qwen2VLAnalyst(VLMAnalyst):
     def __init__(self, processor):
         super().__init__(processor)
@@ -79,7 +109,7 @@ class InternVLAnalyst(VLMAnalyst):
             processor.image_processor.size["height"]
             == processor.image_processor.size["width"]
         )
-        self.patch_size = processor.image_processor.size["height"]
+        self.patch_size = processor.image_processor.size["height"]  # TODO: rename patch_size to tile_size
 
         assert config.vision_config.patch_size[0] == config.vision_config.patch_size[1]
         self.vit_patch_size = config.vision_config.patch_size[0]
