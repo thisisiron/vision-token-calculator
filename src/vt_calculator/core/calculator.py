@@ -2,7 +2,6 @@ import os
 
 from ..setup_env import setup_quiet_environment
 
-from transformers import AutoProcessor, AutoConfig
 from PIL import Image
 from ..utils import get_image_files, calculate_mean, calculate_stdev, create_dummy_image
 from ..parser import parse_arguments

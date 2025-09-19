@@ -15,7 +15,7 @@ MODEL_TO_HF_ID: dict[str, str] = {
     "qwen2.5-vl": "Qwen/Qwen2.5-VL-3B-Instruct",
     "qwen2-vl": "Qwen/Qwen2-VL-2B-Instruct",
     "internvl3": "OpenGVLab/InternVL3-1B-hf",
-    "llava": "llava-hf/llava-1.5-7b-hf"
+    "llava": "llava-hf/llava-1.5-7b-hf",
 }
 
 # Default short model name used across the app when none is provided

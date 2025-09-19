@@ -126,9 +126,9 @@ class Reporter:
         if "tile_size" in result:
             self._print_kv(
                 "Tile Size",
-                    f"{result['tile_size']}",
-                )
-            
+                f"{result['tile_size']}",
+            )
+
         self._print_kv(
             "Grid Size (W x H)",
             f"{result['grid_size'][0]} x {result['grid_size'][1]}",
