@@ -38,7 +38,7 @@ def count_image_tokens(image_input, model_name: str = DEFAULT_MODEL):
 
     # PIL.Image.size -> (width, height); analyst expects (height, width)
     width, height = image_input.size
-    result = analyst.calculate((width, height))
+    result = analyst.calculate((height, width))
 
     # Backward-compatible total token count for batch statistics
     if (
@@ -128,8 +128,8 @@ def main():
             reporter.print(result, args.model_name, f"{args.image}")
 
     elif args.size:
-        # Create dummy image with specified dimensions
-        width, height = args.size
+        # Create dummy image with specified dimensions (HEIGHT WIDTH)
+        height, width = args.size
         image_input = create_dummy_image(width, height)
         print(f"Using dummy image: {width} x {height}")
 

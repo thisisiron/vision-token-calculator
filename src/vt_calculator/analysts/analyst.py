@@ -12,7 +12,7 @@ class VLMAnalyst:
         Calculate the number of image tokens for a given image size.
 
         Args:
-            image_size (Tuple[int, int]): The size of the image in (width, height) format.
+            image_size (Tuple[int, int]): The size of the image in (height, width) format.
 
         Returns:
             dict: A dictionary containing the number of image tokens and other relevant information.
@@ -37,7 +37,7 @@ class LLaVAAnalyst(VLMAnalyst):
         self.vision_feature_select_strategy = processor.vision_feature_select_strategy
 
     def calculate(self, image_size: Tuple[int, int]) -> dict:
-        width, height = image_size
+        height, width = image_size
 
         num_tokens = (self.resized_height // self.patch_size) * (
             self.resized_width // self.patch_size
@@ -50,7 +50,7 @@ class LLaVAAnalyst(VLMAnalyst):
             "patch_size": self.patch_size,
             "has_global_patch": False,
             "image_size": image_size,
-            "resized_size": (self.resized_width, self.resized_height),
+            "resized_size": (self.resized_height, self.resized_width),
             "image_token": (self.image_token, num_tokens),
         }
 
@@ -69,7 +69,7 @@ class Qwen2VLAnalyst(VLMAnalyst):
         self.max_pixels = processor.image_processor.max_pixels
 
     def calculate(self, image_size: Tuple[int, int]) -> dict:
-        width, height = image_size
+        height, width = image_size
         resized_h, resized_w, grid_h, grid_w = resize_and_grid(
             (height, width),
             self.patch_size,
@@ -84,11 +84,11 @@ class Qwen2VLAnalyst(VLMAnalyst):
 
         return {
             "number_of_image_patches": num_patches,
-            "grid_size": (grid_w, grid_h),
+            "grid_size": (grid_h, grid_w),
             "patch_size": self.patch_size,
             "has_global_patch": False,
             "image_size": image_size,
-            "resized_size": (resized_w, resized_h),
+            "resized_size": (resized_h, resized_w),
             "image_token": (self.image_token, num_tokens),
             "image_start_token": (self.image_start_token, 1),
             "image_end_token": (self.image_end_token, 1),
@@ -125,7 +125,7 @@ class InternVLAnalyst(VLMAnalyst):
         ) ** 2
 
     def calculate(self, image_size: Tuple[int, int]) -> dict:
-        width, height = image_size
+        height, width = image_size
         num_patches = 1
         grid_w, grid_h = get_optimal_tiled_canvas(
             (height, width),
@@ -140,12 +140,12 @@ class InternVLAnalyst(VLMAnalyst):
 
         return {
             "number_of_image_patches": num_patches,
-            "grid_size": (grid_w, grid_h),
+            "grid_size": (grid_h, grid_w),
             "tile_size": self.tile_size,
             "patch_size": self.patch_size,
             "has_global_patch": num_patches > 1,
             "image_size": image_size,
-            "resized_size": (self.tile_size * grid_w, self.tile_size * grid_h),
+            "resized_size": (self.tile_size * grid_h, self.tile_size * grid_w),
             "image_token": (self.image_token, num_tokens),
             "image_start_token": (self.image_start_token, 1),
             "image_end_token": (self.image_end_token, 1),

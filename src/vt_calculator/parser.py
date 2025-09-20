@@ -13,8 +13,8 @@ def parse_arguments():
         "-s",
         type=int,
         nargs=2,
-        metavar=("WIDTH", "HEIGHT"),
-        help='Size of dummy image in format "WIDTH HEIGHT" (e.g., "1920 1080")',
+        metavar=("HEIGHT", "WIDTH"),
+        help='Size of dummy image in format "HEIGHT WIDTH" (e.g., "1080 1920")',
     )
 
     input_group.add_argument(
