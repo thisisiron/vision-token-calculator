@@ -107,13 +107,11 @@ class Reporter:
         print("[IMAGE INFO]")
         self._print_kv("Image Source", image_source)
 
-        # result['image_size'] is (H, W) and display as (H x W)
         self._print_kv(
             "Original Size (H x W)",
             f"{result['image_size'][0]} x {result['image_size'][1]}",
         )
 
-        # result['resized_size'] is (H, W) and display as (H x W)
         self._print_kv(
             "Resized Size (H x W)",
             f"{result['resized_size'][0]} x {result['resized_size'][1]}",
@@ -131,7 +129,6 @@ class Reporter:
                 f"{result['tile_size']}",
             )
 
-        # grid_size is stored as (H, W); display as (H x W)
         if "grid_size" in result:
             self._print_kv(
                 "Grid Size (H x W)",
