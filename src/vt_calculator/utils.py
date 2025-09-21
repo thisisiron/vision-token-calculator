@@ -46,13 +46,13 @@ def calculate_stdev(values: Iterable[float]) -> float:
     return float(arr.std(ddof=1))
 
 
-def create_dummy_image(width: int, height: int):
+def create_dummy_image(height: int, width: int):
     """
     Create a dummy image with specified dimensions.
 
     Args:
-        width (int): Image width in pixels
         height (int): Image height in pixels
+        width (int): Image width in pixels
 
     Returns:
         PIL.Image.Image: PIL Image object

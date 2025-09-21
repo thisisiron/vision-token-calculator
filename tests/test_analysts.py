@@ -101,8 +101,8 @@ def test_analyst_token_count_matches_transformers(
     model_path, analyst_factory, image_size, needs_config
 ):
     """Parametrized test verifying analyst matches processor token behavior."""
-    # Create a small deterministic image
-    image = create_dummy_image(width=image_size[0], height=image_size[1])
+    # Create a small deterministic image (image_size is (H, W))
+    image = create_dummy_image(width=image_size[1], height=image_size[0])
 
     # Load the real processor (may download configs on first run)
     processor = AutoProcessor.from_pretrained(model_path)
@@ -113,7 +113,8 @@ def test_analyst_token_count_matches_transformers(
 
     # Use the same processor for Analyst
     analyst = analyst_factory(processor, config)
-    result = analyst.calculate(image.size)
+    # PIL.Image.size -> (W, H); analyst expects (H, W)
+    result = analyst.calculate((image.height, image.width))
     # Compare only the number of image tokens (not including wrapper tokens)
     analyst_tokens = int(result["image_token"][1])
 

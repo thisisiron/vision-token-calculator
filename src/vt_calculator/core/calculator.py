@@ -117,21 +117,17 @@ def main():
             stats = process_directory(args.image, args.model_name)
             display_batch_results(stats, args.model_name)
         else:
-            # Use existing single image file
             print(f"Using existing image: {args.image}")
 
-            # Calculate tokens
             result = count_image_tokens(args.image, args.model_name)
 
-            # Display results using Reporter
             reporter = Reporter()
             reporter.print(result, args.model_name, f"{args.image}")
 
     elif args.size:
-        # Create dummy image with specified dimensions (HEIGHT WIDTH)
         height, width = args.size
-        image_input = create_dummy_image(width, height)
-        print(f"Using dummy image: {width} x {height}")
+        image_input = create_dummy_image(height, width)
+        print(f"Using dummy image: {height} x {width}")
 
         # Calculate tokens
         result = count_image_tokens(image_input, args.model_name)
