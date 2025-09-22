@@ -26,9 +26,7 @@ class LLaVAAnalyst(VLMAnalyst):
 
         self.image_token: str = "<image>"
 
-        self.resized_height, self.resized_width = (
-            processor.image_processor.crop_size
-        )  # (336, 336)
+        self.resized_height, self.resized_width = processor.image_processor.crop_size["height"], processor.image_processor.crop_size["width"]  # (336, 336)
 
         self.patch_size = processor.patch_size
         self.num_additional_image_tokens = (
@@ -37,8 +35,6 @@ class LLaVAAnalyst(VLMAnalyst):
         self.vision_feature_select_strategy = processor.vision_feature_select_strategy
 
     def calculate(self, image_size: Tuple[int, int]) -> dict:
-        height, width = image_size
-
         num_tokens = (self.resized_height // self.patch_size) * (
             self.resized_width // self.patch_size
         ) + self.num_additional_image_tokens
@@ -52,6 +48,7 @@ class LLaVAAnalyst(VLMAnalyst):
             "image_size": image_size,
             "resized_size": (self.resized_height, self.resized_width),
             "image_token": (self.image_token, num_tokens),
+            "image_token_format": f"{self.image_token}*{num_tokens}",
         }
 
 
@@ -69,9 +66,8 @@ class Qwen2VLAnalyst(VLMAnalyst):
         self.max_pixels = processor.image_processor.max_pixels
 
     def calculate(self, image_size: Tuple[int, int]) -> dict:
-        height, width = image_size
         resized_h, resized_w, grid_h, grid_w = resize_and_grid(
-            (height, width),
+            image_size,
             self.patch_size,
             self.merge_size,
             self.min_pixels,
@@ -125,10 +121,9 @@ class InternVLAnalyst(VLMAnalyst):
         ) ** 2
 
     def calculate(self, image_size: Tuple[int, int]) -> dict:
-        height, width = image_size
         num_patches = 1
         grid_w, grid_h = get_optimal_tiled_canvas(
-            (height, width),
+            image_size,
             (self.tile_size, self.tile_size),
             self.min_patches,
             self.max_patches,

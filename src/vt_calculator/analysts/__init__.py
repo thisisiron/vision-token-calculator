@@ -51,14 +51,10 @@ def load_analyst(model_name: str = DEFAULT_MODEL):
     # of a VLMAnalyst subclass. The config argument may be ignored when not
     # needed by the analyst.
     ANALYST_REGISTRY: Dict[str, Tuple[Callable, bool]] = {
-        # Qwen family (no config needed when instantiating the analyst)
         "qwen2.5-vl": (lambda proc, cfg: Qwen2_5_VLAnalyst(proc), False),
         "qwen2-vl": (lambda proc, cfg: Qwen2VLAnalyst(proc), False),
-        # InternVL family (requires model config)
         "internvl3": (lambda proc, cfg: InternVLAnalyst(proc, cfg), True),
-        # NOTE: LLaVA is listed as supported for mapping, but no working analyst
-        # implementation is registered yet. Register here when implemented.
-        # "llava": (lambda proc, cfg: LLaVAAnalyst(proc), False),
+        "llava": (lambda proc, cfg: LLaVAAnalyst(proc), False),
     }
 
     if key not in ANALYST_REGISTRY:
@@ -76,6 +72,7 @@ __all__ = [
     "Qwen2VLAnalyst",
     "Qwen2_5_VLAnalyst",
     "InternVLAnalyst",
+    "LLaVAAnalyst",
     "load_analyst",
     "map_model_id",
     "SUPPORTED_MODELS",
