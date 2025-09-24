@@ -3,7 +3,7 @@ import pytest
 from transformers import AutoProcessor, AutoConfig
 
 from vt_calculator.utils import create_dummy_image
-from vt_calculator.analysts.analyst import Qwen2_5_VLAnalyst, InternVLAnalyst
+from vt_calculator.analysts.analyst import Qwen2_5_VLAnalyst, InternVLAnalyst, LLaVAAnalyst
 
 
 def _count_tokens_via_processor(processor, pil_image) -> int:
@@ -94,6 +94,13 @@ def _assert_token_count_matches(counted_tokens: int, analyst_tokens: int) -> Non
             (800, 800),
             True,
             id="internvl3",
+        ),
+        pytest.param(
+            "llava-hf/llava-1.5-7b-hf",
+            lambda proc, cfg: LLaVAAnalyst(proc),
+            (800, 800),
+            False,
+            id="llava",
         ),
     ],
 )
