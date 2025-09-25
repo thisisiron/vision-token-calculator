@@ -52,6 +52,16 @@ class LLaVAAnalyst(VLMAnalyst):
         }
 
 
+class LLaVANextAnalyst(VLMAnalyst):
+    def __init__(self, processor):
+        super().__init__(processor)
+
+        self.image_token: str = "<image>"
+    
+    def calculate(self, image_size: Tuple[int, int]) -> dict:
+        pass
+
+
 class Qwen2VLAnalyst(VLMAnalyst):
     def __init__(self, processor):
         super().__init__(processor)

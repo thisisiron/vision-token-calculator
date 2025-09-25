@@ -5,6 +5,7 @@ from typing import Callable, Dict, Tuple
 
 SUPPORTED_MODELS: set[str] = {
     "llava",
+    "llava-next"
     "qwen2-vl",
     "qwen2.5-vl",
     "internvl3",
@@ -16,6 +17,7 @@ MODEL_TO_HF_ID: dict[str, str] = {
     "qwen2-vl": "Qwen/Qwen2-VL-2B-Instruct",
     "internvl3": "OpenGVLab/InternVL3-1B-hf",
     "llava": "llava-hf/llava-1.5-7b-hf",
+    "llava-next": "llava-hf/llava-v1.6-mistral-7b-hf"
 }
 
 # Default short model name used across the app when none is provided
@@ -55,6 +57,7 @@ def load_analyst(model_name: str = DEFAULT_MODEL):
         "qwen2-vl": (lambda proc, cfg: Qwen2VLAnalyst(proc), False),
         "internvl3": (lambda proc, cfg: InternVLAnalyst(proc, cfg), True),
         "llava": (lambda proc, cfg: LLaVAAnalyst(proc), False),
+        "llava-next": (lambda proc, cfg: LLaVANextAnalyst(proc), False),
     }
 
     if key not in ANALYST_REGISTRY:
@@ -73,6 +76,7 @@ __all__ = [
     "Qwen2_5_VLAnalyst",
     "InternVLAnalyst",
     "LLaVAAnalyst",
+    "LLaVANextAnalyst",
     "load_analyst",
     "map_model_id",
     "SUPPORTED_MODELS",
