@@ -1,11 +1,17 @@
-from .analyst import Qwen2VLAnalyst, Qwen2_5_VLAnalyst, InternVLAnalyst, LLaVAAnalyst
+from .analyst import (
+    Qwen2VLAnalyst,
+    Qwen2_5_VLAnalyst,
+    InternVLAnalyst,
+    LLaVAAnalyst,
+    LLaVANextAnalyst,
+)
 from transformers import AutoProcessor, AutoConfig
 from typing import Callable, Dict, Tuple
 
 
 SUPPORTED_MODELS: set[str] = {
     "llava",
-    "llava-next"
+    "llava-next",
     "qwen2-vl",
     "qwen2.5-vl",
     "internvl3",
@@ -17,7 +23,7 @@ MODEL_TO_HF_ID: dict[str, str] = {
     "qwen2-vl": "Qwen/Qwen2-VL-2B-Instruct",
     "internvl3": "OpenGVLab/InternVL3-1B-hf",
     "llava": "llava-hf/llava-1.5-7b-hf",
-    "llava-next": "llava-hf/llava-v1.6-mistral-7b-hf"
+    "llava-next": "llava-hf/llava-v1.6-mistral-7b-hf",
 }
 
 # Default short model name used across the app when none is provided
