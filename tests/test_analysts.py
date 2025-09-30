@@ -3,7 +3,11 @@ import pytest
 from transformers import AutoProcessor, AutoConfig
 
 from vt_calculator.utils import create_dummy_image
-from vt_calculator.analysts.analyst import Qwen2_5_VLAnalyst, InternVLAnalyst, LLaVAAnalyst
+from vt_calculator.analysts.analyst import (
+    Qwen2_5_VLAnalyst,
+    InternVLAnalyst,
+    LLaVAAnalyst,
+)
 
 
 def _count_tokens_via_processor(processor, pil_image) -> int:
