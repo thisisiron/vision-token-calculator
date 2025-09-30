@@ -67,6 +67,31 @@ def get_patch_output_size(image_size, target_resolution):
     return new_height, new_width
 
 
+def get_unpadded_features(height, width, patches_height, patches_width, scale_height, scale_width):
+    """
+    Get number of features for a given image with height/width. LLaVA-NeXT is different from LLaVA
+    because it divided each image into patches depending on its resolution. Therefore we need to calculate how many
+    patches an image is divided into and get the number of features from that.
+    """
+    current_height = patches_height * scale_height
+    current_width = patches_width * scale_width
+
+    original_aspect_ratio = width / height
+    current_aspect_ratio = current_width / current_height
+    if original_aspect_ratio > current_aspect_ratio:
+        new_height = int(round(height * (current_width / width), 7))
+        padding = (current_height - new_height) // 2
+        current_height -= padding * 2
+    else:
+        new_width = int(round(width * (current_height / height), 7))
+        padding = (current_width - new_width) // 2
+        current_width -= padding * 2
+
+    unpadded_features = current_height * current_width
+    newline_features = current_height
+    return (unpadded_features, newline_features)
+
+
 @lru_cache(maxsize=10)
 def get_all_supported_aspect_ratios(
     min_image_tiles: int, max_image_tiles: int
@@ -143,6 +168,14 @@ def get_optimal_tiled_canvas(
                 best_grid = grid
 
     return best_grid
+
+
+def get_padding_size(original_resolution: tuple, target_resolution: tuple):
+    original_height, original_width = original_resolution
+    target_height, target_width = target_resolution
+    paste_x, r_x = divmod(target_width - original_width, 2)
+    paste_y, r_y = divmod(target_height - original_height, 2)
+    return (paste_y, paste_y + r_y), (paste_x, paste_x + r_x)
 
 
 def smart_resize(

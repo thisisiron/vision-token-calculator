@@ -1,6 +1,13 @@
 from typing import Tuple
 
-from .tools import resize_and_grid, get_optimal_tiled_canvas
+from .tools import (
+    resize_and_grid,
+    get_optimal_tiled_canvas,
+    select_best_resolution,
+    get_patch_output_size,
+    get_padding_size,
+    get_unpadded_features
+)
 
 
 class VLMAnalyst:
@@ -26,7 +33,10 @@ class LLaVAAnalyst(VLMAnalyst):
 
         self.image_token: str = "<image>"
 
-        self.resized_height, self.resized_width = processor.image_processor.crop_size["height"], processor.image_processor.crop_size["width"]  # (336, 336)
+        self.resized_height, self.resized_width = (
+            processor.image_processor.crop_size["height"],
+            processor.image_processor.crop_size["width"],
+        )  # (336, 336)
 
         self.patch_size = processor.patch_size
         self.num_additional_image_tokens = (
@@ -57,9 +67,49 @@ class LLaVANextAnalyst(VLMAnalyst):
         super().__init__(processor)
 
         self.image_token: str = "<image>"
-    
+
+        self.tile_size = (
+            processor.image_processor.crop_size["height"],
+            processor.image_processor.crop_size["width"],
+        )  # (336, 336)
+        self.patch_size = processor.patch_size
+        self.grid_pinpoints = processor.image_processor.image_grid_pinpoints
+        self.num_additional_image_tokens = (
+            processor.num_additional_image_tokens
+        )  # such as CLS (+1)
+        self.vision_feature_select_strategy = processor.vision_feature_select_strategy
+
     def calculate(self, image_size: Tuple[int, int]) -> dict:
-        pass
+        best_resolution = select_best_resolution(image_size, self.grid_pinpoints)
+        resized_height, resized_width = get_patch_output_size(
+            image_size, best_resolution
+        )
+        padding_y, padding_x = get_padding_size((resized_height, resized_width), best_resolution)
+        
+        num_patches = best_resolution[0] // self.tile_size[0] * best_resolution[1] // self.tile_size[1] + 1
+
+        scale_height, scale_width = best_resolution[0] // self.tile_size[0], best_resolution[1] // self.tile_size[1]
+
+        patches_height = self.tile_size[0] // self.patch_size
+        patches_width = self.tile_size[1] // self.patch_size
+
+        unpadded_features, newline_features = get_unpadded_features(image_size[0], image_size[1], patches_height, patches_width, scale_height, scale_width)
+
+        base_features = patches_height * patches_width + self.num_additional_image_tokens
+        num_image_tokens = unpadded_features + newline_features + base_features
+
+        if self.vision_feature_select_strategy == "default":
+            num_image_tokens -= 1  # CLS token is excluded in the default strategy
+        
+        return {
+            "number_of_image_patches": num_patches,
+            "patch_size": self.patch_size,
+            "has_global_patch": False,
+            "image_size": image_size,
+            "resized_size": (resized_height, resized_width),
+            "image_token": (self.image_token, num_image_tokens),
+            "image_token_format": f"{self.image_token}*{num_image_tokens}",
+        }
 
 
 class Qwen2VLAnalyst(VLMAnalyst):
