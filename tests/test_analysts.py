@@ -88,7 +88,7 @@ def _assert_token_count_matches(counted_tokens: int, analyst_tokens: int) -> Non
         pytest.param(
             "Qwen/Qwen2.5-VL-3B-Instruct",
             lambda proc, cfg: Qwen2_5_VLAnalyst(proc),
-            (256, 256),
+            (800, 800),
             False,
             id="qwen2.5-vl",
         ),

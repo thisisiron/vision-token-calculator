@@ -67,7 +67,15 @@ def get_patch_output_size(image_size, target_resolution):
     return new_height, new_width
 
 
-def get_unpadded_features(height, width, patches_height, patches_width, scale_height, scale_width):
+def get_unpadded_features(
+    height,
+    width,
+    patches_height,
+    patches_width,
+    scale_height,
+    scale_width,
+    max_num_patches=None,
+):
     """
     Get number of features for a given image with height/width. LLaVA-NeXT is different from LLaVA
     because it divided each image into patches depending on its resolution. Therefore we need to calculate how many
@@ -89,6 +97,17 @@ def get_unpadded_features(height, width, patches_height, patches_width, scale_he
 
     unpadded_features = current_height * current_width
     newline_features = current_height
+
+    if max_num_patches is not None:
+        ratio = math.sqrt(
+            current_height * current_width / (max_num_patches * patches_height**2)
+        )
+        if ratio > 1.1:
+            unpadded_features = int(current_height // ratio) * int(
+                current_width // ratio
+            )
+            newline_features = int(current_height // ratio)
+
     return (unpadded_features, newline_features)
 
 
