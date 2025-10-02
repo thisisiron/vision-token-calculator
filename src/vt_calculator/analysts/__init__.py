@@ -4,6 +4,7 @@ from .analyst import (
     InternVLAnalyst,
     LLaVAAnalyst,
     LLaVANextAnalyst,
+    LlavaOnevisionAnalyst,
 )
 from transformers import AutoProcessor, AutoConfig
 from typing import Callable, Dict, Tuple
@@ -12,6 +13,7 @@ from typing import Callable, Dict, Tuple
 SUPPORTED_MODELS: set[str] = {
     "llava",
     "llava-next",
+    "llava-onevision",
     "qwen2-vl",
     "qwen2.5-vl",
     "internvl3",
@@ -24,6 +26,7 @@ MODEL_TO_HF_ID: dict[str, str] = {
     "internvl3": "OpenGVLab/InternVL3-1B-hf",
     "llava": "llava-hf/llava-1.5-7b-hf",
     "llava-next": "llava-hf/llava-v1.6-mistral-7b-hf",
+    "llava-onevision": "llava-hf/llava-onevision-qwen2-7b-ov-hf",
 }
 
 # Default short model name used across the app when none is provided
@@ -64,6 +67,7 @@ def load_analyst(model_name: str = DEFAULT_MODEL):
         "internvl3": (lambda proc, cfg: InternVLAnalyst(proc, cfg), True),
         "llava": (lambda proc, cfg: LLaVAAnalyst(proc), False),
         "llava-next": (lambda proc, cfg: LLaVANextAnalyst(proc), False),
+        "llava-onevision": (lambda proc, cfg: LlavaOnevisionAnalyst(proc), False),
     }
 
     if key not in ANALYST_REGISTRY:
@@ -83,6 +87,7 @@ __all__ = [
     "InternVLAnalyst",
     "LLaVAAnalyst",
     "LLaVANextAnalyst",
+    "LlavaOnevisionAnalyst",
     "load_analyst",
     "map_model_id",
     "SUPPORTED_MODELS",
