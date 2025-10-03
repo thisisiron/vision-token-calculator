@@ -7,7 +7,8 @@ from vt_calculator.analysts.analyst import (
     Qwen2_5_VLAnalyst,
     InternVLAnalyst,
     LLaVAAnalyst,
-    LlavaOnevisionAnalyst
+    LLaVANextAnalyst,
+    LlavaOnevisionAnalyst,
 )
 
 
@@ -108,10 +109,17 @@ def _assert_token_count_matches(counted_tokens: int, analyst_tokens: int) -> Non
             id="llava",
         ),
         pytest.param(
-            "llava-hf/llava-onevision-qwen2-7b-ov-hf",
-            lambda proc, cfg: LlavaOnevisionAnalyst(proc),
+            "llava-hf/llava-v1.6-mistral-7b-hf",
+            lambda proc, cfg: LLaVANextAnalyst(proc),
             (800, 800),
             False,
+            id="llava-next",
+        ),
+        pytest.param(
+            "llava-hf/llava-onevision-qwen2-7b-ov-hf",
+            lambda proc, cfg: LlavaOnevisionAnalyst(proc, cfg),
+            (800, 800),
+            True,
             id="llava-onevision",
         ),
     ],

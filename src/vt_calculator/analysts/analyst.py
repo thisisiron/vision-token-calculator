@@ -68,10 +68,13 @@ class LLaVANextAnalyst(VLMAnalyst):
 
         self.image_token: str = "<image>"
 
+        size = processor.image_processor.size
         self.tile_size = (
-            processor.image_processor.crop_size["height"],
-            processor.image_processor.crop_size["width"],
+            (size["shortest_edge"], size["shortest_edge"])
+            if "shortest_edge" in size
+            else (min(size["height"], size["width"]), min(size["height"], size["width"]))
         )  # (336, 336)
+
         self.patch_size = processor.patch_size
         self.grid_pinpoints = processor.image_processor.image_grid_pinpoints
         self.num_additional_image_tokens = (
@@ -133,17 +136,22 @@ class LLaVANextAnalyst(VLMAnalyst):
 
 
 class LlavaOnevisionAnalyst(VLMAnalyst):
-    def __init__(self, processor):
+    def __init__(self, processor, config):
         super().__init__(processor)
 
         self.image_token: str = "<image>"
+
+        size = processor.image_processor.size
         self.tile_size = (
-            processor.image_processor.crop_size["height"],
-            processor.image_processor.crop_size["width"],
-        )  # (336, 336)
-        self.patch_size = processor.patch_size
+            (size["shortest_edge"], size["shortest_edge"])
+            if "shortest_edge" in size
+            else (min(size["height"], size["width"]), min(size["height"], size["width"]))
+        )  # (384, 384)
+
+        self.patch_size = config.vision_config.patch_size
         self.grid_pinpoints = processor.image_processor.image_grid_pinpoints
         self.vision_feature_select_strategy = processor.vision_feature_select_strategy
+        self.max_num_patches = int(processor.vision_aspect_ratio.strip("anyres_max_"))
 
     def calculate(self, image_size: Tuple[int, int]) -> dict:
         best_resolution = select_best_resolution(image_size, self.grid_pinpoints)
@@ -177,7 +185,7 @@ class LlavaOnevisionAnalyst(VLMAnalyst):
             patches_width,
             scale_height,
             scale_width,
-            max_num_patches=int(self.vision_aspect_ratio.strip("anyres_max_")),
+            max_num_patches=self.max_num_patches,
         )
 
         base_features = patches_height * patches_width

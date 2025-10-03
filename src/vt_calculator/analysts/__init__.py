@@ -67,7 +67,7 @@ def load_analyst(model_name: str = DEFAULT_MODEL):
         "internvl3": (lambda proc, cfg: InternVLAnalyst(proc, cfg), True),
         "llava": (lambda proc, cfg: LLaVAAnalyst(proc), False),
         "llava-next": (lambda proc, cfg: LLaVANextAnalyst(proc), False),
-        "llava-onevision": (lambda proc, cfg: LlavaOnevisionAnalyst(proc), False),
+        "llava-onevision": (lambda proc, cfg: LlavaOnevisionAnalyst(proc, cfg), True),
     }
 
     if key not in ANALYST_REGISTRY:
