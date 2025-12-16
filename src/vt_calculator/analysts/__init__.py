@@ -1,6 +1,7 @@
 from .analyst import (
     Qwen2VLAnalyst,
     Qwen2_5_VLAnalyst,
+    Qwen3VLAnalyst,
     InternVLAnalyst,
     LLaVAAnalyst,
     LLaVANextAnalyst,

@@ -100,6 +100,7 @@ Standard Deviation        : 1370.5
 |-------|--------|
 | Qwen2-VL | qwen2-vl |
 | Qwen2.5-VL | qwen2.5-vl |
+| Qwen3-VL | qwen3-vl |
 | InternVL3 | internvl3 |
 | LLaVA | llava |
 

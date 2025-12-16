@@ -217,8 +217,8 @@ class Qwen2VLAnalyst(VLMAnalyst):
 
         self.patch_size = processor.image_processor.patch_size
         self.merge_size = processor.image_processor.merge_size
-        self.min_pixels = processor.image_processor.min_pixels
-        self.max_pixels = processor.image_processor.max_pixels
+        self.min_pixels = processor.image_processor.min_pixels or processor.image_processor.size["shortest_edge"]
+        self.max_pixels = processor.image_processor.max_pixels or processor.image_processor.size["longest_edge"]
 
     def calculate(self, image_size: Tuple[int, int]) -> dict:
         resized_h, resized_w, grid_h, grid_w = resize_and_grid(
