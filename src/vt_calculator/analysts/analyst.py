@@ -48,6 +48,7 @@ class LLaVAAnalyst(VLMAnalyst):
         num_tokens = (self.resized_height // self.patch_size) * (
             self.resized_width // self.patch_size
         ) + self.num_additional_image_tokens
+
         if self.vision_feature_select_strategy == "default":
             num_tokens -= 1  # CLS token is excluded in the default strategy
 
@@ -96,7 +97,7 @@ class LLaVANextAnalyst(VLMAnalyst):
             // self.tile_size[0]
             * best_resolution[1]
             // self.tile_size[1]
-            + 1
+            + 1  # global patch
         )
 
         scale_height, scale_width = (
@@ -167,7 +168,7 @@ class LlavaOnevisionAnalyst(VLMAnalyst):
             // self.tile_size[0]
             * best_resolution[1]
             // self.tile_size[1]
-            + 1
+            + 1 # global patch
         )
 
         scale_height, scale_width = (
@@ -188,11 +189,12 @@ class LlavaOnevisionAnalyst(VLMAnalyst):
             max_num_patches=self.max_num_patches,
         )
 
+        # The base patch covers the entire image (no CLS for SigLIP)
         base_features = patches_height * patches_width
         num_image_tokens = unpadded_features + newline_features + base_features
 
         if self.vision_feature_select_strategy == "default":
-            num_image_tokens -= 1  # CLS token is excluded in the default strategy
+            num_image_tokens -= 1 
 
         return {
             "number_of_image_patches": num_patches,
@@ -246,6 +248,10 @@ class Qwen2VLAnalyst(VLMAnalyst):
 
 
 class Qwen2_5_VLAnalyst(Qwen2VLAnalyst):
+    pass
+
+
+class Qwen3VLAnalyst(Qwen2VLAnalyst):
     pass
 
 

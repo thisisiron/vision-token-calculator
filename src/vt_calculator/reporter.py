@@ -142,8 +142,10 @@ class Reporter:
         if items_to_show:
             print()
             print("[TOKEN INFO]")
-            print(f"Image Token Format:\n    {result['image_token_format']}")
             for display_name, token_count in items_to_show:
                 self._print_kv(display_name, str(token_count))
+            print()
+            print("[TOKEN FORMAT]")
+            print(result['image_token_format'])
 
         print(SEPARATOR)

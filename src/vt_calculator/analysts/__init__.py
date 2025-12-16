@@ -10,24 +10,18 @@ from transformers import AutoProcessor, AutoConfig
 from typing import Callable, Dict, Tuple
 
 
-SUPPORTED_MODELS: set[str] = {
-    "llava",
-    "llava-next",
-    "llava-onevision",
-    "qwen2-vl",
-    "qwen2.5-vl",
-    "internvl3",
-}
-
 # Mapping from short model name to Hugging Face repository id
 MODEL_TO_HF_ID: dict[str, str] = {
     "qwen2.5-vl": "Qwen/Qwen2.5-VL-3B-Instruct",
     "qwen2-vl": "Qwen/Qwen2-VL-2B-Instruct",
+    "qwen3-vl": "Qwen/Qwen3-VL-2B-Instruct",
     "internvl3": "OpenGVLab/InternVL3-1B-hf",
     "llava": "llava-hf/llava-1.5-7b-hf",
     "llava-next": "llava-hf/llava-v1.6-mistral-7b-hf",
     "llava-onevision": "llava-hf/llava-onevision-qwen2-7b-ov-hf",
 }
+
+SUPPORTED_MODELS: set[str] = set(MODEL_TO_HF_ID.keys())
 
 # Default short model name used across the app when none is provided
 DEFAULT_MODEL: str = "qwen2.5-vl"
@@ -64,6 +58,7 @@ def load_analyst(model_name: str = DEFAULT_MODEL):
     ANALYST_REGISTRY: Dict[str, Tuple[Callable, bool]] = {
         "qwen2.5-vl": (lambda proc, cfg: Qwen2_5_VLAnalyst(proc), False),
         "qwen2-vl": (lambda proc, cfg: Qwen2VLAnalyst(proc), False),
+        "qwen3-vl": (lambda proc, cfg: Qwen3VLAnalyst(proc), False),
         "internvl3": (lambda proc, cfg: InternVLAnalyst(proc, cfg), True),
         "llava": (lambda proc, cfg: LLaVAAnalyst(proc), False),
         "llava-next": (lambda proc, cfg: LLaVANextAnalyst(proc), False),
@@ -84,6 +79,7 @@ def load_analyst(model_name: str = DEFAULT_MODEL):
 __all__ = [
     "Qwen2VLAnalyst",
     "Qwen2_5_VLAnalyst",
+    "Qwen3VLAnalyst",
     "InternVLAnalyst",
     "LLaVAAnalyst",
     "LLaVANextAnalyst",
