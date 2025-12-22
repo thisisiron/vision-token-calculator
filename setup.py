@@ -21,7 +21,7 @@ setup(
     python_requires=">=3.8",
     install_requires=[
         "torch>=2.0.0",
-        "transformers>=4.30.0",
+        "transformers>=4.30.0,<5.0.0",
         "qwen-vl-utils>=0.0.8",
         "Pillow>=9.0.0",
         "numpy>=1.21.0",
