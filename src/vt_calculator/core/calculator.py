@@ -136,7 +136,6 @@ def main():
         reporter = Reporter()
         reporter.print(result, args.model_name, "Dummy image")
 
-    return 0
 
 
 if __name__ == "__main__":
