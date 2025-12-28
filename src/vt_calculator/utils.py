@@ -62,3 +62,27 @@ def create_dummy_image(height: int, width: int):
     image = Image.fromarray(image_array)
 
     return image
+
+
+def check_transformers_version():
+    """
+    Check and print the version of the transformers library.
+
+    Returns:
+        str: The version of the transformers library, or None if not installed.
+    """
+    try:
+        import transformers
+        version = transformers.__version__
+        print(f"Transformers version: {version}")
+
+        major_ver = int(version.split('.')[0])
+        if major_ver >= 5:
+            print("Transformers version 5. Please install version 4.")
+
+        return version
+    except ImportError:
+        print("Transformers library is not installed.")
+        return None
+    except Exception:
+        return transformers.__version__
