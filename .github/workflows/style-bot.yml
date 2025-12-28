@@ -1,0 +1,93 @@
+name: Style Bot
+
+# 1. 댓글이 달리면 실행
+on:
+  issue_comment:
+    types: [created]
+
+# 2. 봇이 코드를 수정(Write)하고 댓글(Write)을 달 권한 부여
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  style-fix:
+    # PR에 달린 댓글이면서, 내용에 '/style'이 있을 때만 실행
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/style')
+    runs-on: ubuntu-latest
+
+    steps:
+      # 3. 댓글이 달린 PR의 브랜치 정보 가져오기
+      - name: Get PR Branch Info
+        id: get-pr
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const request = {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            }
+            const core = require('@actions/core');
+            const pr = await github.rest.pulls.get(request);
+            core.setOutput('branch', pr.data.head.ref);
+            core.setOutput('repo', pr.data.head.repo.full_name);
+
+      # 4. 해당 브랜치로 체크아웃
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.get-pr.outputs.repo }}
+          ref: ${{ steps.get-pr.outputs.branch }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # 5. 파이썬 및 의존성 설치
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          pip install .[quality]
+
+      # 6. 스타일 수정 실행 (Makefile 사용)
+      - name: Run Make Style
+        run: |
+          make style
+
+      # 7. 변경사항 있으면 커밋 & 푸쉬
+      - name: Commit and Push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          if [[ -n $(git status --porcelain) ]]; then
+            git add .
+            git commit -m "style: apply automatic style fixes"
+            git push origin HEAD:${{ steps.get-pr.outputs.branch }}
+            echo "PUSHED=true" >> $GITHUB_ENV
+          else
+            echo "PUSHED=false" >> $GITHUB_ENV
+          fi
+
+      # 8. 결과 댓글 남기기
+      - name: Comment Result
+        if: always()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const pushed = process.env.PUSHED;
+            let msg = '';
+            if (pushed === 'true') {
+              msg = 'Style fixes have been applied and pushed!';
+            } else {
+              msg = 'The code is already clean (or no changes detected).';
+            }
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: msg
+            });
