@@ -31,9 +31,7 @@ setup(
         "python-multipart>=0.0.6",
         "rich",
     ],
-    extras_require={
-        "quality": ["ruff"]
-    },
+    extras_require={"quality": ["ruff"]},
     entry_points={
         "console_scripts": [
             "vt-calc=vt_calculator.core.calculator:main",
