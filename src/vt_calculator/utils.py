@@ -73,10 +73,11 @@ def check_transformers_version():
     """
     try:
         import transformers
+
         version = transformers.__version__
         print(f"Transformers version: {version}")
 
-        major_ver = int(version.split('.')[0])
+        major_ver = int(version.split(".")[0])
         if major_ver >= 5:
             print("Transformers version 5. Please install version 4.")
 
