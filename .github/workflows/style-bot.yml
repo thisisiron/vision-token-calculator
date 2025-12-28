@@ -29,7 +29,6 @@ jobs:
               repo: context.repo.repo,
               pull_number: context.issue.number
             }
-            const core = require('@actions/core');
             const pr = await github.rest.pulls.get(request);
             core.setOutput('branch', pr.data.head.ref);
             core.setOutput('repo', pr.data.head.repo.full_name);
