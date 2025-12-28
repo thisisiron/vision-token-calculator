@@ -73,7 +73,10 @@ class LLaVANextAnalyst(VLMAnalyst):
         self.tile_size = (
             (size["shortest_edge"], size["shortest_edge"])
             if "shortest_edge" in size
-            else (min(size["height"], size["width"]), min(size["height"], size["width"]))
+            else (
+                min(size["height"], size["width"]),
+                min(size["height"], size["width"]),
+            )
         )  # (336, 336)
 
         self.patch_size = processor.patch_size
@@ -146,7 +149,10 @@ class LlavaOnevisionAnalyst(VLMAnalyst):
         self.tile_size = (
             (size["shortest_edge"], size["shortest_edge"])
             if "shortest_edge" in size
-            else (min(size["height"], size["width"]), min(size["height"], size["width"]))
+            else (
+                min(size["height"], size["width"]),
+                min(size["height"], size["width"]),
+            )
         )  # (384, 384)
 
         self.patch_size = config.vision_config.patch_size
@@ -168,7 +174,7 @@ class LlavaOnevisionAnalyst(VLMAnalyst):
             // self.tile_size[0]
             * best_resolution[1]
             // self.tile_size[1]
-            + 1 # global patch
+            + 1  # global patch
         )
 
         scale_height, scale_width = (
@@ -194,7 +200,7 @@ class LlavaOnevisionAnalyst(VLMAnalyst):
         num_image_tokens = unpadded_features + newline_features + base_features
 
         if self.vision_feature_select_strategy == "default":
-            num_image_tokens -= 1 
+            num_image_tokens -= 1
 
         return {
             "number_of_image_patches": num_patches,
@@ -217,8 +223,14 @@ class Qwen2VLAnalyst(VLMAnalyst):
 
         self.patch_size = processor.image_processor.patch_size
         self.merge_size = processor.image_processor.merge_size
-        self.min_pixels = processor.image_processor.min_pixels or processor.image_processor.size["shortest_edge"]
-        self.max_pixels = processor.image_processor.max_pixels or processor.image_processor.size["longest_edge"]
+        self.min_pixels = (
+            processor.image_processor.min_pixels
+            or processor.image_processor.size["shortest_edge"]
+        )
+        self.max_pixels = (
+            processor.image_processor.max_pixels
+            or processor.image_processor.size["longest_edge"]
+        )
 
     def calculate(self, image_size: Tuple[int, int]) -> dict:
         resized_h, resized_w, grid_h, grid_w = resize_and_grid(
