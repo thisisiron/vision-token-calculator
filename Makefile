@@ -1,7 +1,7 @@
 .PHONY: style
 
 check_dirs := src tests
-exclude_folders := __pycache__ .git venv dist
+exclude_folders := ""
 
 style:
 	python -m ruff check $(check_dirs) setup.py --fix --exclude $(exclude_folders)
