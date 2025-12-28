@@ -7,7 +7,7 @@ setup(
     name="vt-calc",
     version="0.0.2",
     author="Vision Token Calculator",
-    description="Calculate the number of tokens used for images in vision language models",
+    description="Calculate the number of tokens used for images in VLMs",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/thisisiron/vision-token-calculator",
