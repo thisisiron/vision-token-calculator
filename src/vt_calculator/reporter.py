@@ -2,6 +2,7 @@ from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
 from rich.text import Text
+from rich.align import Align
 from rich import box
 
 console = Console()
@@ -18,7 +19,12 @@ def display_batch_results(stats: dict, model_name: str):
         model_name (str): Short model name used for processing
     """
     console.print()
-    table = Table(title="BATCH ANALYSIS REPORT", box=box.ROUNDED, show_header=False)
+    table = Table(
+        title="BATCH ANALYSIS REPORT",
+        box=box.ROUNDED,
+        show_header=False,
+        title_justify="center",
+    )
     table.add_column("Metric", style="cyan")
     table.add_column("Value", style="green")
 
@@ -87,10 +93,12 @@ class Reporter:
 
         # Title
         grid.add_row(
-            Panel(
-                "[bold cyan]VISION TOKEN ANALYSIS REPORT[/bold cyan]",
-                box=box.DOUBLE,
-                expand=False,
+            Align.center(
+                Panel(
+                    "[bold cyan]VISION TOKEN ANALYSIS REPORT[/bold cyan]",
+                    box=box.DOUBLE,
+                    expand=False,
+                )
             )
         )
 

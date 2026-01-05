@@ -61,9 +61,9 @@ Supported input formats for directory processing: `.jpg`, `.jpeg`, `.png`, `.web
 
 ```text
 Using dummy image: 1024 x 768
-╔══════════════════════════════╗
-║ VISION TOKEN ANALYSIS REPORT ║
-╚══════════════════════════════╝
+                        ╔══════════════════════════════╗
+                        ║ VISION TOKEN ANALYSIS REPORT ║
+                        ╚══════════════════════════════╝
 ╭───────────────────────────────── MODEL INFO ─────────────────────────────────╮
 │                                                                              │
 │   Model Name                qwen2.5-vl                                       │
