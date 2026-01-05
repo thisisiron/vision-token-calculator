@@ -17,6 +17,7 @@ def display_batch_results(stats: dict, model_name: str):
         stats (dict): Statistics dictionary from process_directory
         model_name (str): Short model name used for processing
     """
+    console.print()
     table = Table(title="BATCH ANALYSIS REPORT", box=box.ROUNDED, show_header=False)
     table.add_column("Metric", style="cyan")
     table.add_column("Value", style="green")

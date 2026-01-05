@@ -6,6 +6,7 @@ A Python tool for calculating the number of tokens generated when processing ima
 
 - Calculate image tokens for VLMs
 - Support both existing images and dummy images
+- Support remote images via URL (http/https)
 - Simple command line interface (CLI)
 
 ## Installation
@@ -32,6 +33,9 @@ After installing with `pip install -e .`, you can use the `vt-calc` command dire
 # Single image
 vt-calc --image path/to/your/image.jpg
 
+# Image from URL
+vt-calc --image https://example.com/image.jpg
+
 # Directory (batch processing)
 vt-calc --image path/to/your/images_dir
 
@@ -47,7 +51,7 @@ vt-calc --help
 
 ### CLI options
 
-- `-i, --image`: Path to an image file or a directory of images
+- `-i, --image`: Path to an image file, a directory of images, or an image URL
 - `-s, --size WIDTH HEIGHT`: Create a dummy image of the given size
 - `-m, --model-name`: Short model name to use (default: `qwen2.5-vl`)
 
@@ -56,42 +60,68 @@ Supported input formats for directory processing: `.jpg`, `.jpeg`, `.png`, `.web
 ### Example output (single image)
 
 ```text
-==================================================
- VISION TOKEN ANALYSIS RESULTS 
-==================================================
-Model                  : Qwen/Qwen2.5-VL-7B-Instruct
-Image Source           : Existing image: examples/cat.jpg
-Original Image Size (W x H)     : 1024 x 768
-Resized Image Size (W x H) : 1024 x 768
-Image Token            : <image>
-Number of Image Tokens : 256
-==================================================
+Using dummy image: 1024 x 768
+╔══════════════════════════════╗
+║ VISION TOKEN ANALYSIS REPORT ║
+╚══════════════════════════════╝
+╭───────────────────────────────── MODEL INFO ─────────────────────────────────╮
+│                                                                              │
+│   Model Name                qwen2.5-vl                                       │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭───────────────────────────────── IMAGE INFO ─────────────────────────────────╮
+│                                                                              │
+│   Image Source              Dummy image                                      │
+│   Original Size (H x W)     1024 x 768                                       │
+│   Resized Size (H x W)      1036 x 756                                       │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭───────────────────────────────── PATCH INFO ─────────────────────────────────╮
+│                                                                              │
+│   Patch Size (ViT)          14                                               │
+│   Grid Size (H x W)         74 x 54                                          │
+│   Number of Patches         3996                                             │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭───────────────────────────────── TOKEN INFO ─────────────────────────────────╮
+│                                                                              │
+│   Image Token               999                                              │
+│   (<|image_pad|>)                                                            │
+│   Image Start Token         1                                                │
+│   (<|vision_start|>)                                                         │
+│   Image End Token           1                                                │
+│   (<|vision_end|>)                                                           │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭──────────────────────────────── TOKEN FORMAT ────────────────────────────────╮
+│               <|vision_start|><|image_pad|>*999<|vision_end|>                │
+╰──────────────────────────────────────────────────────────────────────────────╯
 ```
 
 ### Example output (multi image)
+
 ```text
 Processing directory: test_images/
 Found 8 images to process...
 
-[1/8] Processing: test_1_640x480.jpg ✓ (391 tokens)
-[2/8] Processing: test_2_800x600.jpg ✓ (609 tokens)
-[3/8] Processing: test_3_1024x768.jpg ✓ (999 tokens)
-[4/8] Processing: test_4_1280x720.jpg ✓ (1196 tokens)
-[5/8] Processing: test_5_1920x1080.jpg ✓ (2691 tokens)
-[6/8] Processing: test_6_512x512.jpg ✓ (324 tokens)
-[7/8] Processing: test_7_256x256.jpg ✓ (81 tokens)
-[8/8] Processing: test_8_2048x1536.jpg ✓ (4015 tokens)
+[1/8] Processing: test_1_640x480.jpg ✓ (393 tokens)
+[2/8] Processing: test_2_800x600.jpg ✓ (611 tokens)
+[3/8] Processing: test_3_1024x768.jpg ✓ (1001 tokens)
+[4/8] Processing: test_4_1280x720.jpg ✓ (1198 tokens)
+[5/8] Processing: test_5_1920x1080.jpg ✓ (2693 tokens)
+[6/8] Processing: test_6_512x512.jpg ✓ (326 tokens)
+[7/8] Processing: test_7_256x256.jpg ✓ (83 tokens)
+[8/8] Processing: test_8_2048x1536.jpg ✓ (4017 tokens)
 
-==================================================
- BATCH ANALYSIS RESULTS 
-==================================================
-Model                     : Qwen/Qwen2.5-VL-7B-Instruct
-Total Images Processed    : 8
-Average Vision Tokens     : 1288.2
-Minimum Vision Tokens     : 81
-Maximum Vision Tokens     : 4015
-Standard Deviation        : 1370.5
-==================================================
+       BATCH ANALYSIS REPORT
+╭────────────────────────┬────────────╮
+│ Model                  │ qwen2.5-vl │
+│ Total Images Processed │ 8          │
+│ Average Vision Tokens  │ 1290.2     │
+│ Minimum Vision Tokens  │ 83         │
+│ Maximum Vision Tokens  │ 4017       │
+│ Standard Deviation     │ 1370.5     │
+╰────────────────────────┴────────────╯
 ```
 
 ## Supported Models
