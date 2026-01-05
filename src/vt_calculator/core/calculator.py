@@ -3,7 +3,7 @@ import os
 from ..setup_env import setup_quiet_environment
 
 from PIL import Image
-from ..utils import get_image_files, calculate_mean, calculate_stdev, create_dummy_image
+from ..utils import get_image_files, calculate_mean, calculate_stdev, create_dummy_image, is_url, load_image_from_url
 from ..parser import parse_arguments
 from ..reporter import (
     display_batch_results,
@@ -34,7 +34,10 @@ def count_image_tokens(image_input, model_name: str = DEFAULT_MODEL):
     analyst = load_analyst(model_name)
 
     if isinstance(image_input, str):
-        image_input = Image.open(image_input)
+        if is_url(image_input):
+            image_input = load_image_from_url(image_input)
+        else:
+            image_input = Image.open(image_input)
 
     # PIL.Image.size -> (width, height); analyst expects (height, width)
     width, height = image_input.size
@@ -113,7 +116,12 @@ def main():
     args = parse_arguments()
 
     if args.image:
-        if os.path.isdir(args.image):
+        if is_url(args.image):
+            print(f"Loading image from URL: {args.image}")
+            result = count_image_tokens(args.image, args.model_name)
+            reporter = Reporter()
+            reporter.print(result, args.model_name, f"URL: {args.image}")
+        elif os.path.isdir(args.image):
             stats = process_directory(args.image, args.model_name)
             display_batch_results(stats, args.model_name)
         else:

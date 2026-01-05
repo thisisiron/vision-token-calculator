@@ -1,6 +1,11 @@
 import sys
 from pathlib import Path
 
+import pytest
+
+
+TEST_IMAGE_URL = "https://qianwen-res.oss-accelerate-overseas.aliyuncs.com/Qwen2-VL/demo_small.jpg"
+
 
 def run_cli(capsys, argv):
     import vt_calculator.core.calculator as calc
@@ -45,3 +50,33 @@ def test_cli_with_directory_via_image_flag(capsys, tmp_path):
     assert "BATCH ANALYSIS RESULTS" in output
     assert "Total Images Processed" in output
     assert "Average Vision Tokens" in output
+
+
+@pytest.mark.network
+def test_cli_with_url(capsys):
+    exit_code, output = run_cli(capsys, ["--image", TEST_IMAGE_URL])
+    assert exit_code is None or exit_code == 0
+    assert "Loading image from URL:" in output
+    assert "VISION TOKEN ANALYSIS" in output
+
+
+@pytest.mark.network
+def test_count_image_tokens_with_url():
+    from vt_calculator import count_image_tokens
+
+    result = count_image_tokens(TEST_IMAGE_URL)
+    assert "image_size" in result
+    assert "number_of_image_tokens" in result or "image_token" in result
+
+
+def test_is_url():
+    from vt_calculator.utils import is_url
+
+    assert is_url("https://example.com/image.jpg") is True
+    assert is_url("http://example.com/image.jpg") is True
+    assert is_url("HTTP://EXAMPLE.COM/image.jpg") is True
+    assert is_url("/path/to/local/image.jpg") is False
+    assert is_url("./relative/path.png") is False
+    assert is_url("C:\\Windows\\path.jpg") is False
+    assert is_url("") is False
+    assert is_url(None) is False

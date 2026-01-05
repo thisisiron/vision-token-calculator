@@ -25,6 +25,7 @@ setup(
         "qwen-vl-utils>=0.0.8",
         "Pillow>=9.0.0",
         "numpy>=1.21.0",
+        "requests>=2.25.0",
         "fastapi>=0.104.0",
         "uvicorn[standard]>=0.24.0",
         "jinja2>=3.1.0",

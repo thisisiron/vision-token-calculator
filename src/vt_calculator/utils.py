@@ -1,8 +1,10 @@
 import os
 import glob
+from io import BytesIO
 from typing import Iterable
 import numpy as np
 
+import requests
 from PIL import Image
 
 
@@ -87,3 +89,43 @@ def check_transformers_version():
         return None
     except Exception:
         return transformers.__version__
+
+
+def is_url(path: str) -> bool:
+    """
+    Check if the given path is a URL.
+
+    Args:
+        path (str): Path or URL string to check
+
+    Returns:
+        bool: True if the path is a URL, False otherwise
+    """
+    if not isinstance(path, str):
+        return False
+    return path.lower().startswith(("http://", "https://"))
+
+
+def load_image_from_url(url: str, timeout: int = 30) -> Image.Image:
+    """
+    Download image from URL and return as PIL Image.
+
+    Args:
+        url (str): URL of the image to download
+        timeout (int): Request timeout in seconds (default: 30)
+
+    Returns:
+        PIL.Image.Image: PIL Image object
+
+    Raises:
+        requests.RequestException: If the request fails
+        PIL.UnidentifiedImageError: If the content is not a valid image
+    """
+    response = requests.get(url, timeout=timeout)
+    response.raise_for_status()
+
+    image = Image.open(BytesIO(response.content))
+    if image.mode not in ("RGB", "L"):
+        image = image.convert("RGB")
+
+    return image
