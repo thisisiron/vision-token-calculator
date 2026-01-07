@@ -35,6 +35,19 @@ def parse_arguments():
     )
 
     parser.add_argument(
+        "--compare",
+        "-c",
+        type=str,
+        default=None,
+        metavar="MODELS",
+        help=(
+            "Compare multiple models (comma-separated). "
+            "Use 'all' for all supported models. "
+            "Example: --compare qwen2.5-vl,internvl3,llava"
+        ),
+    )
+
+    parser.add_argument(
         "--fps",
         type=float,
         default=None,

@@ -90,3 +90,58 @@ def test_cli_with_video_file(capsys, tmp_path):
     exit_code, output = run_cli(capsys, ["--video", str(video_path)])
     assert "VIDEO TOKEN ANALYSIS REPORT" in output
 
+
+def test_cli_compare_with_dummy_image(capsys):
+    exit_code, output = run_cli(
+        capsys, 
+        ["--size", "640", "480", "--compare", "qwen2.5-vl,llava"]
+    )
+    assert "MODEL COMPARISON" in output
+    assert "qwen2.5-vl" in output
+    assert "llava" in output
+    assert "Best" in output
+
+
+def test_cli_compare_with_image_file(capsys, tmp_path):
+    from PIL import Image
+    
+    img = Image.new("RGB", (512, 512), color=(255, 128, 0))
+    img_path = tmp_path / "test.jpg"
+    img.save(img_path)
+    
+    exit_code, output = run_cli(
+        capsys, 
+        ["--image", str(img_path), "--compare", "qwen2.5-vl,llava"]
+    )
+    assert "MODEL COMPARISON" in output
+    assert "qwen2.5-vl" in output
+    assert "llava" in output
+
+
+def test_cli_compare_all_models(capsys):
+    exit_code, output = run_cli(
+        capsys, 
+        ["--size", "256", "256", "--compare", "all"]
+    )
+    assert "MODEL COMPARISON" in output
+    assert "qwen2.5-vl" in output
+    assert "internvl3" in output
+    assert "Summary" in output
+
+
+def test_cli_compare_invalid_model(capsys):
+    exit_code, output = run_cli(
+        capsys,
+        ["--size", "640", "480", "--compare", "qwen2.5-vl,invalid-model-xyz"]
+    )
+    assert "Unsupported models" in output or "Error" in output
+
+
+def test_cli_compare_video(capsys):
+    exit_code, output = run_cli(
+        capsys,
+        ["--size", "640", "480", "--duration", "2", "--fps", "1", "--compare", "qwen2.5-vl,llava-next"]
+    )
+    assert "VIDEO MODEL COMPARISON" in output
+    assert "qwen2.5-vl" in output
+
