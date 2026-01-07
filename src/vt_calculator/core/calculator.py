@@ -71,16 +71,12 @@ def count_image_tokens(image_input, model_name: str = DEFAULT_MODEL):
 def count_video_tokens(
     video_path: str,
     model_name: str = DEFAULT_MODEL,
-    fps: float = None,
-    max_frames: int = None,
+    fps: float | None = None,
+    max_frames: int | None = None,
 ):
     analyst = load_analyst(model_name)
     metadata = get_video_metadata(video_path)
-    return analyst.calculate_video(
-        metadata,
-        fps=fps if fps is not None else None,
-        max_frames=max_frames if max_frames is not None else None
-    )
+    return analyst.calculate_video(metadata, fps=fps, max_frames=max_frames)
 
 
 def process_directory(directory_path: str, model_name: str):
@@ -168,15 +164,39 @@ def main():
 
     elif args.size:
         height, width = args.size
-        image_input = create_dummy_image(height, width)
-        print(f"Using dummy image: {height} x {width}")
 
-        # Calculate tokens
-        result = count_image_tokens(image_input, args.model_name)
+        if args.fps is not None or args.duration is not None:
+            # Treat as dummy video
+            fps = args.fps if args.fps else 1.0
+            duration = args.duration if args.duration else 1.0
+            total_frames = int(duration * fps)
 
-        # Display results using Reporter
-        reporter = Reporter()
-        reporter.print(result, args.model_name, "Dummy image")
+            # Construct metadata directly without creating file
+            metadata = {
+                "width": width,
+                "height": height,
+                "duration": duration,
+                "total_frames": total_frames,
+            }
+
+            print(f"Using dummy video: {width}x{height} @ {fps}fps, {duration}s")
+            
+            analyst = load_analyst(args.model_name)
+            result = analyst.calculate_video(metadata, args.fps, args.max_frames)
+
+            reporter = Reporter()
+            reporter.print(result, args.model_name, "Dummy video")
+        else:
+            # Treat as dummy image
+            image_input = create_dummy_image(height, width)
+            print(f"Using dummy image: {height} x {width}")
+
+            # Calculate tokens
+            result = count_image_tokens(image_input, args.model_name)
+
+            # Display results using Reporter
+            reporter = Reporter()
+            reporter.print(result, args.model_name, "Dummy image")
 
 
 

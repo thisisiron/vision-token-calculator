@@ -48,4 +48,11 @@ def parse_arguments():
         help="Maximum number of frames to extract from video",
     )
 
+    parser.add_argument(
+        "--duration",
+        type=float,
+        default=None,
+        help="Duration of the video in seconds (used for dummy video calculation)",
+    )
+
     return parser.parse_args()
