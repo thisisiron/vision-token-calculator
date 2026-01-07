@@ -1,10 +1,10 @@
 import torch
 import pytest
 from transformers import AutoProcessor, AutoConfig
-from qwen_vl_utils import process_vision_info
+
 
 from vt_calculator.utils import create_dummy_image
-from vt_calculator.video import get_video_metadata
+from vt_calculator.video import get_video_metadata, extract_video_frames
 from vt_calculator.analysts.analyst import (
     Qwen2_5_VLAnalyst,
     InternVLAnalyst,
@@ -108,12 +108,12 @@ def _count_video_tokens_via_processor(processor, video_path, fps=None) -> int:
         messages, tokenize=False, add_generation_prompt=True
     )
 
-    image_inputs, video_inputs = process_vision_info(messages)
+    video_frames = extract_video_frames(video_path, fps=fps)
 
     inputs = processor(
         text=[text],
-        images=image_inputs,
-        videos=video_inputs,
+        images=None,
+        videos=[video_frames.frames],
         padding=True,
         return_tensors="pt",
     )

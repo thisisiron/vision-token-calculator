@@ -5,7 +5,7 @@ A Python tool for calculating the number of tokens generated when processing ima
 with various Vision Language Models (VLMs).
 """
 
-__version__ = "0.0.2"
+__version__ = "0.0.3"
 __author__ = "Vision Token Calculator"
 
 from .core.calculator import count_image_tokens, process_directory

@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="vt-calc",
-    version="0.0.2",
+    version="0.0.3",
     author="Vision Token Calculator",
     description="Calculate the number of tokens used for images in VLMs",
     long_description=long_description,

@@ -45,6 +45,15 @@ vt-calc --size 1920 1080
 # Choose a short model name (default: qwen2.5-vl)
 vt-calc --image path/to/your/image.jpg -m qwen2.5-vl
 
+# Calculate tokens for a video file
+vt-calc --video path/to/video.mp4 -m qwen2.5-vl
+
+# Specify frame sampling rate (FPS)
+vt-calc --video video.mp4 --fps 2.0
+
+# Limit maximum number of frames
+vt-calc --video video.mp4 --max-frames 100
+
 # Show help
 vt-calc --help
 ```
@@ -122,19 +131,6 @@ Found 8 images to process...
 │ Maximum Vision Tokens  │ 4017       │
 │ Standard Deviation     │ 1370.5     │
 ╰────────────────────────┴────────────╯
-```
-
-### Video Token Calculation
-
-```bash
-# Calculate tokens for a video file
-vt-calc --video path/to/video.mp4 -m qwen2.5-vl
-
-# Specify frame sampling rate (FPS)
-vt-calc --video video.mp4 --fps 2.0
-
-# Limit maximum number of frames
-vt-calc --video video.mp4 --max-frames 100
 ```
 
 ## Supported Models
