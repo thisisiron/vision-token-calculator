@@ -29,16 +29,18 @@ def display_comparison_results(comparison: dict, source: str):
 
     title = "VIDEO MODEL COMPARISON" if is_video else "IMAGE MODEL COMPARISON"
     console.print()
-    console.print(Align.center(
-        Panel(f"[bold cyan]{title}[/bold cyan]", box=box.DOUBLE, expand=False)
-    ))
+    console.print(
+        Align.center(
+            Panel(f"[bold cyan]{title}[/bold cyan]", box=box.DOUBLE, expand=False)
+        )
+    )
 
     if is_video:
         meta = comparison["video_metadata"]
-        info_text = f"Resolution: {meta['width']}x{meta['height']} | Duration: {meta.get('duration', 0):.1f}s"
+        info_text = f"Resolution (H×W): {meta['height']}×{meta['width']} | Duration: {meta.get('duration', 0):.1f}s"
     else:
         h, w = comparison["image_size"]
-        info_text = f"Resolution: {w}x{h}"
+        info_text = f"Resolution (H×W): {h}×{w}"
 
     console.print(Align.center(f"[dim]{source}[/dim]"))
     console.print(Align.center(f"[dim]{info_text}[/dim]"))
@@ -57,8 +59,7 @@ def display_comparison_results(comparison: dict, source: str):
     table.add_column("Status", justify="center", width=8)
 
     sorted_results = sorted(
-        results,
-        key=lambda x: (x["tokens"] is None, x["tokens"] or float("inf"))
+        results, key=lambda x: (x["tokens"] is None, x["tokens"] or float("inf"))
     )
 
     valid_tokens = [r["tokens"] for r in sorted_results if r["tokens"] is not None]
@@ -72,11 +73,7 @@ def display_comparison_results(comparison: dict, source: str):
 
         if error:
             table.add_row(
-                "-",
-                model,
-                "[red]N/A[/red]",
-                f"[dim]{error[:20]}[/dim]",
-                "[red]✗[/red]"
+                "-", model, "[red]N/A[/red]", f"[dim]{error[:20]}[/dim]", "[red]✗[/red]"
             )
         else:
             rank += 1
@@ -111,7 +108,9 @@ def display_comparison_results(comparison: dict, source: str):
 
     if summary:
         savings = summary["max_tokens"] - summary["min_tokens"]
-        savings_pct = (savings / summary["max_tokens"] * 100) if summary["max_tokens"] > 0 else 0
+        savings_pct = (
+            (savings / summary["max_tokens"] * 100) if summary["max_tokens"] > 0 else 0
+        )
 
         summary_text = (
             f"[green]Best:[/green] {summary['best_model']} ({summary['min_tokens']:,} tokens)\n"
@@ -120,12 +119,14 @@ def display_comparison_results(comparison: dict, source: str):
         )
 
         console.print()
-        console.print(Panel(
-            summary_text,
-            title="[bold]Summary[/bold]",
-            border_style="cyan",
-            box=box.ROUNDED,
-        ))
+        console.print(
+            Panel(
+                summary_text,
+                title="[bold]Summary[/bold]",
+                border_style="cyan",
+                box=box.ROUNDED,
+            )
+        )
 
 
 def display_batch_results(stats: dict, model_name: str):
@@ -177,7 +178,9 @@ def print_processing_status(filename: str, current: int, total: int):
     console.print(f"[{current}/{total}] Processing: {filename} ", end="")
 
 
-def print_processing_result(success: bool, token_count: Optional[int] = None, error: Optional[str] = None):
+def print_processing_result(
+    success: bool, token_count: Optional[int] = None, error: Optional[str] = None
+):
     if success:
         console.print(f"[green]✓ ({token_count} tokens)[/green]")
     else:
@@ -196,7 +199,9 @@ class Reporter:
     def __init__(self, label_width: int = 42):
         self.label_width = label_width
 
-    def print(self, result: dict, model_name: str, image_source: Optional[str] = None) -> None:
+    def print(
+        self, result: dict, model_name: str, image_source: Optional[str] = None
+    ) -> None:
         """
         Display single image/video analysis results using Rich tables.
 
@@ -206,7 +211,11 @@ class Reporter:
             image_source (str): Optional description of image/video source
         """
         is_video = result.get("type") == "video"
-        title = "VISION TOKEN ANALYSIS REPORT" if not is_video else "VIDEO TOKEN ANALYSIS REPORT"
+        title = (
+            "VISION TOKEN ANALYSIS REPORT"
+            if not is_video
+            else "VIDEO TOKEN ANALYSIS REPORT"
+        )
 
         # Main Layout Table
         grid = Table.grid(expand=True)
@@ -241,29 +250,31 @@ class Reporter:
         input_table.add_column("Key", style="cyan", ratio=1)
         input_table.add_column("Value", style="bold white", ratio=2)
         input_table.add_row("Source", image_source)
-        
+
         if is_video:
             input_table.add_row("Duration", f"{result['duration']:.2f}s")
             input_table.add_row("FPS (Sampled)", f"{result['fps']:.2f}")
-            input_table.add_row("Sampled Frames", str(result['sampled_frames']))
+            input_table.add_row("Sampled Frames", str(result["sampled_frames"]))
             input_table.add_row(
-                "Resolution (H x W)",
-                f"{result['resized_size'][0]} x {result['resized_size'][1]} (Resized)",
+                "Resolution (H×W)",
+                f"{result['resized_size'][0]}×{result['resized_size'][1]} (Resized)",
             )
         else:
             input_table.add_row(
-                "Original Size (H x W)",
-                f"{result['image_size'][0]} x {result['image_size'][1]}",
+                "Original Size (H×W)",
+                f"{result['image_size'][0]}×{result['image_size'][1]}",
             )
             input_table.add_row(
-                "Resized Size (H x W)",
-                f"{result['resized_size'][0]} x {result['resized_size'][1]}",
+                "Resized Size (H×W)",
+                f"{result['resized_size'][0]}×{result['resized_size'][1]}",
             )
-            
+
         grid.add_row(
             Panel(
                 input_table,
-                title="[bold]VIDEO INFO[/bold]" if is_video else "[bold]IMAGE INFO[/bold]",
+                title="[bold]VIDEO INFO[/bold]"
+                if is_video
+                else "[bold]IMAGE INFO[/bold]",
                 border_style="green",
                 box=box.ROUNDED,
             )
@@ -273,27 +284,29 @@ class Reporter:
         patch_table = Table(box=box.SIMPLE, show_header=False, expand=True)
         patch_table.add_column("Key", style="cyan", ratio=1)
         patch_table.add_column("Value", style="bold white", ratio=2)
-        
+
         if is_video:
-             if "grid_size" in result:
+            if "grid_size" in result:
                 patch_table.add_row(
                     "Grid Size (per frame)",
                     f"{result['grid_size'][0]} x {result['grid_size'][1]}",
                 )
         else:
-            patch_table.add_row("Patch Size (ViT)", str(result.get("patch_size", "N/A")))
+            patch_table.add_row(
+                "Patch Size (ViT)", str(result.get("patch_size", "N/A"))
+            )
             if "tile_size" in result:
                 patch_table.add_row("Tile Size", str(result["tile_size"]))
             if "grid_size" in result:
                 patch_table.add_row(
-                    "Grid Size (H x W)",
-                    f"{result['grid_size'][0]} x {result['grid_size'][1]}",
+                    "Grid Size (H×W)",
+                    f"{result['grid_size'][0]}×{result['grid_size'][1]}",
                 )
             patch_table.add_row(
                 "Number of Patches",
                 f"{result['number_of_image_patches']} {'(global patch)' if result.get('has_global_patch') else ''}",
             )
-            
+
         grid.add_row(
             Panel(
                 patch_table,
@@ -309,12 +322,17 @@ class Reporter:
         token_info_table.add_column("Value", style="bold white", ratio=2)
 
         items_to_show = []
-        keys_to_check = ["number_of_video_tokens", "image_token", "image_start_token", "image_end_token"]
-        
+        keys_to_check = [
+            "number_of_video_tokens",
+            "image_token",
+            "image_start_token",
+            "image_end_token",
+        ]
+
         for key in keys_to_check:
             if key == "number_of_video_tokens" and key in result:
-                 items_to_show.append(("Total Video Tokens", result[key]))
-                 continue
+                items_to_show.append(("Total Video Tokens", result[key]))
+                continue
 
             value = result.get(key)
             if isinstance(value, (list, tuple)) and len(value) == 2:
@@ -339,9 +357,7 @@ class Reporter:
             if "token_format" in result or "image_token_format" in result:
                 fmt = result.get("token_format", result.get("image_token_format"))
                 format_panel = Panel(
-                    Text(
-                        fmt, style="bold white", justify="center"
-                    ),
+                    Text(fmt, style="bold white", justify="center"),
                     title="[bold]TOKEN FORMAT[/bold]",
                     border_style="white",
                     box=box.ROUNDED,
@@ -349,4 +365,3 @@ class Reporter:
                 grid.add_row(format_panel)
 
         console.print(grid)
-

@@ -21,9 +21,7 @@ def parse_arguments():
         "--image", "-i", type=str, help="Path to image file or directory"
     )
 
-    input_group.add_argument(
-        "--video", "-v", type=str, help="Path to video file"
-    )
+    input_group.add_argument("--video", "-v", type=str, help="Path to video file")
 
     parser.add_argument(
         "--model-name",

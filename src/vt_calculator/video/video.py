@@ -59,9 +59,7 @@ def smart_nframes(
         min_frames = ceil_by_factor(FPS_MIN_FRAMES, FRAME_FACTOR)
 
     if max_frames is None:
-        max_frames = floor_by_factor(
-            min(FPS_MAX_FRAMES, total_frames), FRAME_FACTOR
-        )
+        max_frames = floor_by_factor(min(FPS_MAX_FRAMES, total_frames), FRAME_FACTOR)
 
     nframes = total_frames / video_fps * target_fps
     if nframes > total_frames:
@@ -153,9 +151,7 @@ class TorchCodecReader(VideoReader):
     def get_metadata(self, video_path: str) -> VideoMetadata:
         from torchcodec.decoders import VideoDecoder
 
-        decoder = VideoDecoder(
-            video_path, num_ffmpeg_threads=TORCHCODEC_NUM_THREADS
-        )
+        decoder = VideoDecoder(video_path, num_ffmpeg_threads=TORCHCODEC_NUM_THREADS)
         metadata = decoder.metadata
 
         return VideoMetadata(
@@ -182,9 +178,7 @@ class TorchCodecReader(VideoReader):
         )
         nframes = smart_nframes(frame_count, metadata.fps, fps, max_frames=max_frames)
 
-        decoder = VideoDecoder(
-            video_path, num_ffmpeg_threads=TORCHCODEC_NUM_THREADS
-        )
+        decoder = VideoDecoder(video_path, num_ffmpeg_threads=TORCHCODEC_NUM_THREADS)
 
         idx = torch.linspace(start_frame, end_frame, nframes).round().long().tolist()
         frames = decoder.get_frames_at(indices=idx).data
@@ -237,9 +231,7 @@ class TorchvisionReader(VideoReader):
     def get_metadata(self, video_path: str) -> VideoMetadata:
         from torchvision.io import read_video
 
-        video, _, info = read_video(
-            video_path, pts_unit="sec", output_format="TCHW"
-        )
+        video, _, info = read_video(video_path, pts_unit="sec", output_format="TCHW")
         fps = info["video_fps"]
         total_frames = video.shape[0]
 
@@ -267,9 +259,7 @@ class TorchvisionReader(VideoReader):
         )
         nframes = smart_nframes(frame_count, metadata.fps, fps, max_frames=max_frames)
 
-        video, _, info = read_video(
-            video_path, pts_unit="sec", output_format="TCHW"
-        )
+        video, _, info = read_video(video_path, pts_unit="sec", output_format="TCHW")
 
         idx = torch.linspace(start_frame, end_frame, nframes).round().long()
         frames = video[idx]
@@ -286,15 +276,9 @@ class PyAVReader(VideoReader):
 
         width = video_stream.width
         height = video_stream.height
-        fps = (
-            float(video_stream.average_rate)
-            if video_stream.average_rate
-            else 0.0
-        )
+        fps = float(video_stream.average_rate) if video_stream.average_rate else 0.0
         duration = (
-            float(container.duration / av.time_base)
-            if container.duration
-            else 0.0
+            float(container.duration / av.time_base) if container.duration else 0.0
         )
         total_frames = video_stream.frames
 

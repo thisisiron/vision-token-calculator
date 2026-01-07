@@ -84,7 +84,7 @@ Supported input formats for directory processing: `.jpg`, `.jpeg`, `.png`, `.web
 ### Example output (single image)
 
 ```text
-Using dummy image: 1024 x 768
+Using dummy image (H×W): 1024×768
                         ╔══════════════════════════════╗
                         ║ VISION TOKEN ANALYSIS REPORT ║
                         ╚══════════════════════════════╝
@@ -95,15 +95,15 @@ Using dummy image: 1024 x 768
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ╭───────────────────────────────── IMAGE INFO ─────────────────────────────────╮
 │                                                                              │
-│   Image Source              Dummy image                                      │
-│   Original Size (H x W)     1024 x 768                                       │
-│   Resized Size (H x W)      1036 x 756                                       │
+│   Image Source              Dummy image (H×W): 1024×768                      │
+│   Original Size (H×W)       1024×768                                         │
+│   Resized Size (H×W)        1036×756                                         │
 │                                                                              │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ╭───────────────────────────────── PATCH INFO ─────────────────────────────────╮
 │                                                                              │
 │   Patch Size (ViT)          14                                               │
-│   Grid Size (H x W)         74 x 54                                          │
+│   Grid Size (H×W)           74×54                                            │
 │   Number of Patches         3996                                             │
 │                                                                              │
 ╰──────────────────────────────────────────────────────────────────────────────╯
@@ -151,12 +151,12 @@ Found 8 images to process...
 ### Example output (model comparison)
 
 ```text
-Comparing models for dummy image: 1080 x 1920
+Comparing models for dummy image (H×W): 1920×1080
                         ╔══════════════════════════════╗
                         ║    IMAGE MODEL COMPARISON    ║
                         ╚══════════════════════════════╝
-                           Dummy image: 1080x1920
-                           Resolution: 1920x1080
+                      Dummy image (H×W): 1920×1080
+                      Resolution (H×W): 1920×1080
 
                          Token Comparison
 ╭────────┬─────────────────┬────────────┬──────────────────────┬──────────╮

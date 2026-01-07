@@ -41,8 +41,7 @@ class TestBackendSelection:
         assert backend is not None
 
     @pytest.mark.skipif(
-        not is_torchcodec_available(),
-        reason="torchcodec not available"
+        not is_torchcodec_available(), reason="torchcodec not available"
     )
     def test_torchcodec_priority(self):
         backend = get_default_backend()
@@ -50,7 +49,7 @@ class TestBackendSelection:
 
     @pytest.mark.skipif(
         is_torchcodec_available() or not is_decord_available(),
-        reason="decord not highest priority"
+        reason="decord not highest priority",
     )
     def test_decord_priority(self):
         backend = get_default_backend()
@@ -85,10 +84,7 @@ class TestVideoMetadata:
         assert "duration" in metadata
         assert "total_frames" in metadata
 
-    @pytest.mark.skipif(
-        not is_decord_available(),
-        reason="decord not installed"
-    )
+    @pytest.mark.skipif(not is_decord_available(), reason="decord not installed")
     def test_get_metadata_decord(self, video_file):
         metadata = get_video_metadata(video_file, backend=VideoBackend.DECORD)
 
@@ -97,25 +93,19 @@ class TestVideoMetadata:
         assert metadata["fps"] == pytest.approx(3.0, rel=0.1)
 
     @pytest.mark.skipif(
-        not is_torchvision_available(),
-        reason="torchvision not installed"
+        not is_torchvision_available(), reason="torchvision not installed"
     )
     def test_get_metadata_torchvision(self, video_file):
-        metadata = get_video_metadata(
-            video_file, backend=VideoBackend.TORCHVISION
-        )
+        metadata = get_video_metadata(video_file, backend=VideoBackend.TORCHVISION)
 
         assert metadata["width"] == 336
         assert metadata["height"] == 336
 
     @pytest.mark.skipif(
-        not is_torchcodec_available(),
-        reason="torchcodec not installed"
+        not is_torchcodec_available(), reason="torchcodec not installed"
     )
     def test_get_metadata_torchcodec(self, video_file):
-        metadata = get_video_metadata(
-            video_file, backend=VideoBackend.TORCHCODEC
-        )
+        metadata = get_video_metadata(video_file, backend=VideoBackend.TORCHCODEC)
 
         assert metadata["width"] == 336
         assert metadata["height"] == 336
@@ -167,9 +157,7 @@ class TestFrameExtraction:
         assert isinstance(frames_result.frames, pytest.importorskip("torch").Tensor)
         assert frames_result.frames.ndim == 4
 
-    @pytest.mark.skipif(
-        not is_decord_available(), reason="decord not installed"
-    )
+    @pytest.mark.skipif(not is_decord_available(), reason="decord not installed")
     def test_extract_frames_decord(self, video_file):
         frames_result = extract_video_frames(
             video_file, fps=1.0, backend=VideoBackend.DECORD

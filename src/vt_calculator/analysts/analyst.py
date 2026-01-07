@@ -46,7 +46,6 @@ class VLMAnalyst:
         raise NotImplementedError
 
 
-
 class LLaVAAnalyst(VLMAnalyst):
     def __init__(self, processor):
         super().__init__(processor)
@@ -172,14 +171,14 @@ class LLaVANextAnalyst(VLMAnalyst):
         num_frames = int(duration * target_fps)
         if num_frames == 0:
             num_frames = 1
-            
+
         if max_frames and num_frames > max_frames:
             num_frames = max_frames
             target_fps = num_frames / duration if duration > 0 else target_fps
 
         frame_result = self.calculate_image((height, width))
         tokens_per_frame = frame_result["image_token"][1]
-        
+
         total_tokens = tokens_per_frame * num_frames
 
         return {
@@ -291,7 +290,6 @@ class Qwen2VLAnalyst(VLMAnalyst):
         self.temporal_patch_size = 2
 
     def calculate_image(self, image_size: Tuple[int, int]) -> dict:
-
         resized_h, resized_w, grid_h, grid_w = resize_and_grid(
             image_size,
             self.patch_size,
@@ -328,11 +326,11 @@ class Qwen2VLAnalyst(VLMAnalyst):
         duration = video_metadata["duration"]
 
         target_fps = fps if fps else 2.0
-        
+
         num_frames = int(duration * target_fps)
         if num_frames == 0:
             num_frames = 1
-            
+
         if max_frames and num_frames > max_frames:
             num_frames = max_frames
 
@@ -345,10 +343,8 @@ class Qwen2VLAnalyst(VLMAnalyst):
         )
 
         tokens_per_frame = (grid_h * grid_w) // (self.merge_size**2)
-        
-        num_video_tokens = (
-            tokens_per_frame * num_frames
-        ) // self.temporal_patch_size
+
+        num_video_tokens = (tokens_per_frame * num_frames) // self.temporal_patch_size
 
         return {
             "type": "video",
@@ -438,14 +434,14 @@ class InternVLAnalyst(VLMAnalyst):
         num_frames = int(duration * target_fps)
         if num_frames == 0:
             num_frames = 1
-            
+
         if max_frames and num_frames > max_frames:
             num_frames = max_frames
             target_fps = num_frames / duration if duration > 0 else target_fps
 
         frame_result = self.calculate_image((height, width))
         tokens_per_frame = frame_result["image_token"][1]
-        
+
         total_tokens = (tokens_per_frame + 2) * num_frames
 
         return {

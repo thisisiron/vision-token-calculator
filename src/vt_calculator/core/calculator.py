@@ -110,19 +110,23 @@ def compare_image_tokens(
             result = analyst.calculate_image(image_size)
             total_tokens = _extract_total_tokens(result)
 
-            results.append({
-                "model": model_name,
-                "tokens": total_tokens,
-                "details": result,
-                "error": None,
-            })
+            results.append(
+                {
+                    "model": model_name,
+                    "tokens": total_tokens,
+                    "details": result,
+                    "error": None,
+                }
+            )
         except Exception as e:
-            results.append({
-                "model": model_name,
-                "tokens": None,
-                "details": None,
-                "error": str(e),
-            })
+            results.append(
+                {
+                    "model": model_name,
+                    "tokens": None,
+                    "details": None,
+                    "error": str(e),
+                }
+            )
 
     valid_results = [r for r in results if r["tokens"] is not None]
     valid_results.sort(key=lambda x: x["tokens"])
@@ -163,26 +167,32 @@ def compare_video_tokens(
             result = analyst.calculate_video(metadata, fps=fps, max_frames=max_frames)
             total_tokens = result.get("number_of_video_tokens", 0)
 
-            results.append({
-                "model": model_name,
-                "tokens": total_tokens,
-                "details": result,
-                "error": None,
-            })
+            results.append(
+                {
+                    "model": model_name,
+                    "tokens": total_tokens,
+                    "details": result,
+                    "error": None,
+                }
+            )
         except NotImplementedError:
-            results.append({
-                "model": model_name,
-                "tokens": None,
-                "details": None,
-                "error": "Video not supported",
-            })
+            results.append(
+                {
+                    "model": model_name,
+                    "tokens": None,
+                    "details": None,
+                    "error": "Video not supported",
+                }
+            )
         except Exception as e:
-            results.append({
-                "model": model_name,
-                "tokens": None,
-                "details": None,
-                "error": str(e),
-            })
+            results.append(
+                {
+                    "model": model_name,
+                    "tokens": None,
+                    "details": None,
+                    "error": str(e),
+                }
+            )
 
     valid_results = [r for r in results if r["tokens"] is not None]
     valid_results.sort(key=lambda x: x["tokens"])
@@ -351,16 +361,22 @@ def main():
                     "total_frames": total_frames,
                 }
 
-                print(f"Comparing models for dummy video: {width}x{height} @ {fps}fps, {duration}s")
+                print(
+                    f"Comparing models for dummy video (H×W): {height}×{width} @ {fps}fps, {duration}s"
+                )
                 comparison = compare_video_tokens(
                     metadata, model_names, args.fps, args.max_frames
                 )
-                display_comparison_results(comparison, f"Dummy video: {width}x{height}")
+                display_comparison_results(
+                    comparison, f"Dummy video (H×W): {height}×{width}"
+                )
             else:
                 image_input = create_dummy_image(height, width)
-                print(f"Comparing models for dummy image: {height} x {width}")
+                print(f"Comparing models for dummy image (H×W): {height}×{width}")
                 comparison = compare_image_tokens(image_input, model_names)
-                display_comparison_results(comparison, f"Dummy image: {height}x{width}")
+                display_comparison_results(
+                    comparison, f"Dummy image (H×W): {height}×{width}"
+                )
         return
 
     if args.video:
@@ -407,25 +423,28 @@ def main():
                 "total_frames": total_frames,
             }
 
-            print(f"Using dummy video: {width}x{height} @ {fps}fps, {duration}s")
-            
+            print(f"Using dummy video (H×W): {height}×{width} @ {fps}fps, {duration}s")
+
             analyst = load_analyst(args.model_name)
             result = analyst.calculate_video(metadata, args.fps, args.max_frames)
 
             reporter = Reporter()
-            reporter.print(result, args.model_name, "Dummy video")
+            reporter.print(
+                result, args.model_name, f"Dummy video (H×W): {height}×{width}"
+            )
         else:
             # Treat as dummy image
             image_input = create_dummy_image(height, width)
-            print(f"Using dummy image: {height} x {width}")
+            print(f"Using dummy image (H×W): {height}×{width}")
 
             # Calculate tokens
             result = count_image_tokens(image_input, args.model_name)
 
             # Display results using Reporter
             reporter = Reporter()
-            reporter.print(result, args.model_name, "Dummy image")
-
+            reporter.print(
+                result, args.model_name, f"Dummy image (H×W): {height}×{width}"
+            )
 
 
 if __name__ == "__main__":

@@ -22,7 +22,7 @@ def is_torchcodec_available() -> bool:
 
         if importlib.util.find_spec("torchcodec") is None:
             return False
-        from torchcodec.decoders import VideoDecoder
+        from torchcodec.decoders import VideoDecoder  # noqa: F401
 
         return True
     except (ImportError, AttributeError, Exception):
@@ -41,7 +41,7 @@ def is_torchvision_available() -> bool:
 
         if importlib.util.find_spec("torchvision") is None:
             return False
-        import torchvision.io
+        import torchvision.io  # noqa: F401
 
         return True
     except (ImportError, AttributeError, Exception):
@@ -61,9 +61,7 @@ def get_default_backend() -> VideoBackend:
     if forced_backend is not None:
         try:
             backend = VideoBackend[forced_backend.upper()]
-            print(
-                f"Using forced video backend: {backend.value}", file=sys.stderr
-            )
+            print(f"Using forced video backend: {backend.value}", file=sys.stderr)
             return backend
         except KeyError:
             logger.warning(
