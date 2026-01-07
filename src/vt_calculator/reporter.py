@@ -10,6 +10,109 @@ console = Console()
 SEPARATOR = "=" * 72
 
 
+def display_comparison_results(comparison: dict, source: str):
+    """Display model comparison results."""
+    is_video = comparison["type"] == "video_comparison"
+    results = comparison["results"]
+    summary = comparison["summary"]
+
+    title = "VIDEO MODEL COMPARISON" if is_video else "IMAGE MODEL COMPARISON"
+    console.print()
+    console.print(Align.center(
+        Panel(f"[bold cyan]{title}[/bold cyan]", box=box.DOUBLE, expand=False)
+    ))
+
+    if is_video:
+        meta = comparison["video_metadata"]
+        info_text = f"Resolution: {meta['width']}x{meta['height']} | Duration: {meta.get('duration', 0):.1f}s"
+    else:
+        h, w = comparison["image_size"]
+        info_text = f"Resolution: {w}x{h}"
+
+    console.print(Align.center(f"[dim]{source}[/dim]"))
+    console.print(Align.center(f"[dim]{info_text}[/dim]"))
+    console.print()
+
+    table = Table(
+        title="Token Comparison",
+        box=box.ROUNDED,
+        show_header=True,
+        header_style="bold cyan",
+    )
+    table.add_column("Rank", style="dim", width=6, justify="center")
+    table.add_column("Model", style="bold", min_width=15)
+    table.add_column("Tokens", justify="right", min_width=10)
+    table.add_column("Efficiency", min_width=20)
+    table.add_column("Status", justify="center", width=8)
+
+    sorted_results = sorted(
+        results,
+        key=lambda x: (x["tokens"] is None, x["tokens"] or float("inf"))
+    )
+
+    valid_tokens = [r["tokens"] for r in sorted_results if r["tokens"] is not None]
+    max_tokens = max(valid_tokens) if valid_tokens else 1
+
+    rank = 0
+    for result in sorted_results:
+        model = result["model"]
+        tokens = result["tokens"]
+        error = result["error"]
+
+        if error:
+            table.add_row(
+                "-",
+                model,
+                "[red]N/A[/red]",
+                f"[dim]{error[:20]}[/dim]",
+                "[red]✗[/red]"
+            )
+        else:
+            rank += 1
+            efficiency = 1 - (tokens / max_tokens) if max_tokens > 0 else 0
+            bar_filled = int(efficiency * 10)
+            bar = "█" * bar_filled + "░" * (10 - bar_filled)
+
+            if rank == 1:
+                rank_str = "[green]🥇 1[/green]"
+                tokens_str = f"[green bold]{tokens:,}[/green bold]"
+                bar_str = f"[green]{bar}[/green] Best"
+            elif rank == 2 and len(valid_tokens) > 2:
+                rank_str = "[yellow]🥈 2[/yellow]"
+                tokens_str = f"[yellow]{tokens:,}[/yellow]"
+                bar_str = f"[yellow]{bar}[/yellow]"
+            elif rank == len(valid_tokens):
+                rank_str = f"[red]{rank}[/red]"
+                tokens_str = f"[red]{tokens:,}[/red]"
+                bar_str = f"[red]{bar}[/red]"
+            else:
+                rank_str = str(rank)
+                tokens_str = f"{tokens:,}"
+                bar_str = bar
+
+            table.add_row(rank_str, model, tokens_str, bar_str, "[green]✓[/green]")
+
+    console.print(table)
+
+    if summary:
+        savings = summary["max_tokens"] - summary["min_tokens"]
+        savings_pct = (savings / summary["max_tokens"] * 100) if summary["max_tokens"] > 0 else 0
+
+        summary_text = (
+            f"[green]Best:[/green] {summary['best_model']} ({summary['min_tokens']:,} tokens)\n"
+            f"[red]Worst:[/red] {summary.get('worst_model', 'N/A')} ({summary['max_tokens']:,} tokens)\n"
+            f"[cyan]Potential Savings:[/cyan] {savings:,} tokens ({savings_pct:.1f}%)"
+        )
+
+        console.print()
+        console.print(Panel(
+            summary_text,
+            title="[bold]Summary[/bold]",
+            border_style="cyan",
+            box=box.ROUNDED,
+        ))
+
+
 def display_batch_results(stats: dict, model_name: str):
     """
     Display batch processing results using Rich tables.

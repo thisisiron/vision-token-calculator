@@ -16,15 +16,192 @@ from ..video import get_video_metadata
 from ..parser import parse_arguments
 from ..reporter import (
     display_batch_results,
+    display_comparison_results,
     print_processing_status,
     print_processing_result,
     print_directory_info,
 )
 from ..reporter import Reporter
-from ..analysts import load_analyst, DEFAULT_MODEL
+from ..analysts import load_analyst, DEFAULT_MODEL, SUPPORTED_MODELS
+from typing import List, Dict, Any
 
 
 setup_quiet_environment()
+
+
+def parse_compare_models(compare_str: str) -> List[str]:
+    """Parse --compare argument into list of model names.
+
+    Args:
+        compare_str: Comma-separated model names or 'all'
+
+    Returns:
+        List of valid model short names
+
+    Raises:
+        ValueError: If any model name is invalid
+    """
+    if compare_str.lower() == "all":
+        return sorted(SUPPORTED_MODELS)
+
+    models = [m.strip().lower() for m in compare_str.split(",")]
+    invalid = [m for m in models if m not in SUPPORTED_MODELS]
+    if invalid:
+        raise ValueError(
+            f"Unsupported models: {invalid}. Supported: {sorted(SUPPORTED_MODELS)}"
+        )
+
+    return models
+
+
+def _extract_total_tokens(result: dict) -> int:
+    """Extract total token count from analyst result.
+
+    Handles different result formats from various VLM analysts.
+
+    Args:
+        result: Token calculation result dictionary
+
+    Returns:
+        Total number of tokens
+    """
+    # If pre-calculated total exists
+    if "number_of_image_tokens" in result:
+        return int(result["number_of_image_tokens"])
+
+    # Sum up individual token components (Qwen-style)
+    total = 0
+    for key in ["image_token", "image_start_token", "image_end_token"]:
+        value = result.get(key)
+        if isinstance(value, (list, tuple)) and len(value) == 2:
+            total += int(value[1])
+
+    if total > 0:
+        return total
+
+    # Fallback for single token format (LLaVA-style)
+    image_token = result.get("image_token")
+    if isinstance(image_token, (list, tuple)) and len(image_token) == 2:
+        return int(image_token[1])
+
+    return 0
+
+
+def compare_image_tokens(
+    image_input,
+    model_names: List[str],
+) -> Dict[str, Any]:
+    """Compare image tokens across multiple models."""
+    if isinstance(image_input, str):
+        if is_url(image_input):
+            image = load_image_from_url(image_input)
+        else:
+            image = Image.open(image_input)
+    else:
+        image = image_input
+
+    width, height = image.size
+    image_size = (height, width)
+
+    results = []
+    for model_name in model_names:
+        try:
+            analyst = load_analyst(model_name)
+            result = analyst.calculate_image(image_size)
+            total_tokens = _extract_total_tokens(result)
+
+            results.append({
+                "model": model_name,
+                "tokens": total_tokens,
+                "details": result,
+                "error": None,
+            })
+        except Exception as e:
+            results.append({
+                "model": model_name,
+                "tokens": None,
+                "details": None,
+                "error": str(e),
+            })
+
+    valid_results = [r for r in results if r["tokens"] is not None]
+    valid_results.sort(key=lambda x: x["tokens"])
+
+    summary = {}
+    if valid_results:
+        summary = {
+            "min_tokens": valid_results[0]["tokens"],
+            "max_tokens": valid_results[-1]["tokens"],
+            "best_model": valid_results[0]["model"],
+            "worst_model": valid_results[-1]["model"],
+        }
+
+    return {
+        "type": "image_comparison",
+        "image_size": image_size,
+        "results": results,
+        "summary": summary,
+    }
+
+
+def compare_video_tokens(
+    video_input,
+    model_names: List[str],
+    fps: float | None = None,
+    max_frames: int | None = None,
+) -> Dict[str, Any]:
+    """Compare video tokens across multiple models."""
+    if isinstance(video_input, dict):
+        metadata = video_input
+    else:
+        metadata = get_video_metadata(video_input)
+
+    results = []
+    for model_name in model_names:
+        try:
+            analyst = load_analyst(model_name)
+            result = analyst.calculate_video(metadata, fps=fps, max_frames=max_frames)
+            total_tokens = result.get("number_of_video_tokens", 0)
+
+            results.append({
+                "model": model_name,
+                "tokens": total_tokens,
+                "details": result,
+                "error": None,
+            })
+        except NotImplementedError:
+            results.append({
+                "model": model_name,
+                "tokens": None,
+                "details": None,
+                "error": "Video not supported",
+            })
+        except Exception as e:
+            results.append({
+                "model": model_name,
+                "tokens": None,
+                "details": None,
+                "error": str(e),
+            })
+
+    valid_results = [r for r in results if r["tokens"] is not None]
+    valid_results.sort(key=lambda x: x["tokens"])
+
+    summary = {}
+    if valid_results:
+        summary = {
+            "min_tokens": valid_results[0]["tokens"],
+            "max_tokens": valid_results[-1]["tokens"],
+            "best_model": valid_results[0]["model"],
+            "worst_model": valid_results[-1]["model"],
+        }
+
+    return {
+        "type": "video_comparison",
+        "video_metadata": metadata,
+        "results": results,
+        "summary": summary,
+    }
 
 
 def count_image_tokens(image_input, model_name: str = DEFAULT_MODEL):
@@ -134,6 +311,57 @@ def main():
     Main function to demonstrate image token counting.
     """
     args = parse_arguments()
+
+    if args.compare:
+        try:
+            model_names = parse_compare_models(args.compare)
+        except ValueError as e:
+            print(f"Error: {e}")
+            return
+
+        if args.video:
+            if is_video(args.video):
+                comparison = compare_video_tokens(
+                    args.video, model_names, args.fps, args.max_frames
+                )
+                display_comparison_results(comparison, f"Video: {args.video}")
+            else:
+                print(f"Error: {args.video} is not a valid video file.")
+
+        elif args.image:
+            if os.path.isdir(args.image):
+                print("Error: --compare does not support directories yet.")
+                return
+            comparison = compare_image_tokens(args.image, model_names)
+            source = f"URL: {args.image}" if is_url(args.image) else args.image
+            display_comparison_results(comparison, source)
+
+        elif args.size:
+            height, width = args.size
+
+            if args.fps is not None or args.duration is not None:
+                fps = args.fps if args.fps else 1.0
+                duration = args.duration if args.duration else 1.0
+                total_frames = int(duration * fps)
+
+                metadata = {
+                    "width": width,
+                    "height": height,
+                    "duration": duration,
+                    "total_frames": total_frames,
+                }
+
+                print(f"Comparing models for dummy video: {width}x{height} @ {fps}fps, {duration}s")
+                comparison = compare_video_tokens(
+                    metadata, model_names, args.fps, args.max_frames
+                )
+                display_comparison_results(comparison, f"Dummy video: {width}x{height}")
+            else:
+                image_input = create_dummy_image(height, width)
+                print(f"Comparing models for dummy image: {height} x {width}")
+                comparison = compare_image_tokens(image_input, model_names)
+                display_comparison_results(comparison, f"Dummy image: {height}x{width}")
+        return
 
     if args.video:
         if is_video(args.video):
