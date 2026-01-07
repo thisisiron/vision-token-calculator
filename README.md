@@ -5,6 +5,7 @@ A Python tool for calculating the number of tokens generated when processing ima
 ## Features
 
 - Calculate image/video tokens for VLMs
+- **Multi-model comparison** - Compare token counts across multiple models
 - Support both existing images and dummy images
 - Support remote images via URL (http/https)
 - Simple command line interface (CLI)
@@ -54,6 +55,15 @@ vt-calc --video video.mp4 --fps 2.0
 # Limit maximum number of frames
 vt-calc --video video.mp4 --max-frames 100
 
+# Compare multiple models (comma-separated)
+vt-calc --image photo.jpg --compare qwen2.5-vl,internvl3,llava
+
+# Compare all supported models
+vt-calc --size 1920 1080 --compare all
+
+# Compare models for video
+vt-calc --video video.mp4 --compare qwen2.5-vl,llava-next --fps 2.0
+
 # Show help
 vt-calc --help
 ```
@@ -61,8 +71,13 @@ vt-calc --help
 ### CLI options
 
 - `-i, --image`: Path to an image file, a directory of images, or an image URL
-- `-s, --size WIDTH HEIGHT`: Create a dummy image of the given size
+- `-v, --video`: Path to a video file
+- `-s, --size HEIGHT WIDTH`: Create a dummy image of the given size
 - `-m, --model-name`: Short model name to use (default: `qwen2.5-vl`)
+- `-c, --compare`: Compare multiple models (comma-separated list or `all`)
+- `--fps`: Frames per second for video sampling
+- `--max-frames`: Maximum number of frames to extract from video
+- `--duration`: Duration in seconds (for dummy video calculation)
 
 Supported input formats for directory processing: `.jpg`, `.jpeg`, `.png`, `.webp` (case-insensitive).
 
@@ -133,6 +148,34 @@ Found 8 images to process...
 ╰────────────────────────┴────────────╯
 ```
 
+### Example output (model comparison)
+
+```text
+Comparing models for dummy image: 1080 x 1920
+                        ╔══════════════════════════════╗
+                        ║    IMAGE MODEL COMPARISON    ║
+                        ╚══════════════════════════════╝
+                           Dummy image: 1080x1920
+                           Resolution: 1920x1080
+
+                         Token Comparison
+╭────────┬─────────────────┬────────────┬──────────────────────┬──────────╮
+│  Rank  │ Model           │     Tokens │ Efficiency           │  Status  │
+├────────┼─────────────────┼────────────┼──────────────────────┼──────────┤
+│ 🥇 1   │ qwen2.5-vl      │      2,693 │ ██████████ Best      │    ✓     │
+│ 🥈 2   │ qwen2-vl        │      2,693 │ ██████████           │    ✓     │
+│ 3      │ internvl3       │      3,584 │ ███████░░░           │    ✓     │
+│ 4      │ llava-next      │      4,096 │ █████░░░░░           │    ✓     │
+│ 5      │ llava           │      4,624 │ ████░░░░░░           │    ✓     │
+╰────────┴─────────────────┴────────────┴──────────────────────┴──────────╯
+
+╭─────────────────────────── Summary ───────────────────────────╮
+│ Best: qwen2.5-vl (2,693 tokens)                               │
+│ Worst: llava (4,624 tokens)                                   │
+│ Potential Savings: 1,931 tokens (41.8%)                       │
+╰───────────────────────────────────────────────────────────────╯
+```
+
 ## Supported Models
 
 | Model | Option |
@@ -142,6 +185,8 @@ Found 8 images to process...
 | Qwen3-VL | qwen3-vl |
 | InternVL3 | internvl3 |
 | LLaVA | llava |
+| LLaVA-NeXT | llava-next |
+| LLaVA-OneVision | llava-onevision |
 
 ## License
 
