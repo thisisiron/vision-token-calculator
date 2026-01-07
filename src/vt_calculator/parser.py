@@ -21,6 +21,10 @@ def parse_arguments():
         "--image", "-i", type=str, help="Path to image file or directory"
     )
 
+    input_group.add_argument(
+        "--video", "-v", type=str, help="Path to video file"
+    )
+
     parser.add_argument(
         "--model-name",
         "-m",
@@ -28,6 +32,20 @@ def parse_arguments():
         choices=sorted(SUPPORTED_MODELS),
         default=DEFAULT_MODEL,
         help=f"Short model name to use (default: {DEFAULT_MODEL})",
+    )
+
+    parser.add_argument(
+        "--fps",
+        type=float,
+        default=None,
+        help="Frames per second to sample for video analysis (default: model specific, usually 1 or 2)",
+    )
+
+    parser.add_argument(
+        "--max-frames",
+        type=int,
+        default=None,
+        help="Maximum number of frames to extract from video",
     )
 
     return parser.parse_args()

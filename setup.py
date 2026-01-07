@@ -22,17 +22,27 @@ setup(
     install_requires=[
         "torch>=2.0.0",
         "transformers>=4.30.0,<5.0.0",
-        "qwen-vl-utils>=0.0.8",
         "Pillow>=9.0.0",
         "numpy>=1.21.0",
         "requests>=2.25.0",
+        "av>=10.0.0",
         "fastapi>=0.104.0",
         "uvicorn[standard]>=0.24.0",
         "jinja2>=3.1.0",
         "python-multipart>=0.0.6",
         "rich",
     ],
-    extras_require={"quality": ["ruff"]},
+    extras_require={
+        "video-advanced": [
+            "decord>=0.6.0",
+            "torchcodec>=0.1.0",
+        ],
+        "test": [
+            "pytest>=7.0.0",
+            "qwen-vl-utils>=0.0.8",
+        ],
+        "quality": ["ruff"],
+    },
     entry_points={
         "console_scripts": [
             "vt-calc=vt_calculator.core.calculator:main",

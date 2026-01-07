@@ -59,11 +59,42 @@ def create_dummy_image(height: int, width: int):
     Returns:
         PIL.Image.Image: PIL Image object
     """
-    # Create a simple black image using np.zeros
     image_array = np.zeros((height, width, 3), dtype=np.uint8)
     image = Image.fromarray(image_array)
 
     return image
+
+
+def create_dummy_video(
+    file_path: str, width: int, height: int, fps: int, duration: int
+) -> str:
+    """
+    Create a dummy video file with specified dimensions and duration.
+
+    Args:
+        file_path (str): Path where the video file will be created
+        width (int): Video width in pixels
+        height (int): Video height in pixels
+        fps (int): Frames per second
+        duration (int): Duration in seconds
+
+    Returns:
+        str: Path to the created video file
+    """
+    import cv2
+
+    frames = int(duration * fps)
+
+    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+    out = cv2.VideoWriter(file_path, fourcc, fps, (width, height))
+
+    for _ in range(frames):
+        frame = np.random.randint(0, 255, (height, width, 3), dtype=np.uint8)
+        out.write(frame)
+
+    out.release()
+
+    return file_path
 
 
 def check_transformers_version():
@@ -104,6 +135,22 @@ def is_url(path: str) -> bool:
     if not isinstance(path, str):
         return False
     return path.lower().startswith(("http://", "https://"))
+
+
+def is_video(path: str) -> bool:
+    """
+    Check if the given path is a video file.
+
+    Args:
+        path (str): Path string to check
+
+    Returns:
+        bool: True if the path is a video, False otherwise
+    """
+    if not isinstance(path, str):
+        return False
+    video_extensions = (".mp4", ".avi", ".mkv", ".mov", ".webm")
+    return path.lower().endswith(video_extensions)
 
 
 def load_image_from_url(url: str, timeout: int = 30) -> Image.Image:

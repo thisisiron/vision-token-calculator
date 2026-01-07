@@ -1,8 +1,10 @@
 import torch
 import pytest
 from transformers import AutoProcessor, AutoConfig
+from qwen_vl_utils import process_vision_info
 
 from vt_calculator.utils import create_dummy_image
+from vt_calculator.video import get_video_metadata
 from vt_calculator.analysts.analyst import (
     Qwen2_5_VLAnalyst,
     InternVLAnalyst,
@@ -56,7 +58,6 @@ def _count_tokens_via_processor(processor, pil_image) -> int:
 
 
 def _get_processor_image_token_str(processor) -> str:
-    """Return the processor's image token as a string, with id fallback."""
     if getattr(processor, "image_token", None) is not None:
         return processor.image_token
     if getattr(processor, "image_token_id", None) is not None:
@@ -68,7 +69,6 @@ def _get_processor_image_token_str(processor) -> str:
 
 
 def _assert_image_token_matches(processor, analyst) -> None:
-    """Assert that the processor and analyst image tokens match."""
     proc_token = _get_processor_image_token_str(processor)
     assert proc_token == analyst.image_token, (
         f"Mismatch between processor-image token ({proc_token}) and "
@@ -77,13 +77,58 @@ def _assert_image_token_matches(processor, analyst) -> None:
 
 
 def _assert_token_count_matches(counted_tokens: int, analyst_tokens: int) -> None:
-    """Assert that the counted tokens equal the analyst-computed tokens."""
     assert counted_tokens == analyst_tokens, (
         f"Mismatch between processor-counted tokens ({counted_tokens}) and "
         f"Analyst-computed tokens ({analyst_tokens})."
     )
 
 
+def _count_video_tokens_via_processor(processor, video_path, fps=None) -> int:
+    if "Qwen2" not in processor.__class__.__name__ and "Qwen2" not in str(processor):
+        raise NotImplementedError(
+            "Video token counting is currently only supported for Qwen2-VL models. "
+            "Other models require model-specific video frame loading logic."
+        )
+
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "video",
+                    "video": video_path,
+                    "fps": fps,
+                },
+                {"type": "text", "text": "Describe this video."},
+            ],
+        }
+    ]
+
+    text = processor.apply_chat_template(
+        messages, tokenize=False, add_generation_prompt=True
+    )
+
+    image_inputs, video_inputs = process_vision_info(messages)
+
+    inputs = processor(
+        text=[text],
+        images=image_inputs,
+        videos=video_inputs,
+        padding=True,
+        return_tensors="pt",
+    )
+
+    input_ids = inputs["input_ids"][0].tolist()
+
+    video_pad_token_id = processor.tokenizer.convert_tokens_to_ids("<|video_pad|>")
+    if video_pad_token_id != processor.tokenizer.unk_token_id:
+        return input_ids.count(video_pad_token_id)
+
+    raise ValueError("Could not determine video tokens for processor")
+
+
+@pytest.mark.network
+@pytest.mark.slow
 @pytest.mark.parametrize(
     "model_path,analyst_factory,image_size,needs_config",
     [
@@ -127,23 +172,46 @@ def _assert_token_count_matches(counted_tokens: int, analyst_tokens: int) -> Non
 def test_analyst_token_count_matches_transformers(
     model_path, analyst_factory, image_size, needs_config
 ):
-    """Parametrized test verifying analyst matches processor token behavior."""
-    # Create a small deterministic image (image_size is (H, W))
     image = create_dummy_image(width=image_size[1], height=image_size[0])
 
-    # Load the real processor (may download configs on first run)
     processor = AutoProcessor.from_pretrained(model_path)
     config = AutoConfig.from_pretrained(model_path) if needs_config else None
 
-    # Count tokens via processor outputs
     counted_tokens = _count_tokens_via_processor(processor, image)
 
-    # Use the same processor for Analyst
     analyst = analyst_factory(processor, config)
-    # PIL.Image.size -> (W, H); analyst expects (H, W)
-    result = analyst.calculate((image.height, image.width))
-    # Compare only the number of image tokens (not including wrapper tokens)
+    result = analyst.calculate_image((image.height, image.width))
     analyst_tokens = int(result["image_token"][1])
 
     _assert_image_token_matches(processor, analyst)
+    _assert_token_count_matches(counted_tokens, analyst_tokens)
+
+
+@pytest.mark.network
+@pytest.mark.slow
+@pytest.mark.parametrize(
+    "model_path,analyst_factory,fps",
+    [
+        pytest.param(
+            "Qwen/Qwen2.5-VL-3B-Instruct",
+            lambda proc, cfg: Qwen2_5_VLAnalyst(proc),
+            1.0,
+            id="qwen2.5-vl-video",
+        ),
+    ],
+)
+def test_analyst_video_token_count_matches_transformers(
+    model_path, analyst_factory, fps, dummy_video
+):
+    processor = AutoProcessor.from_pretrained(model_path)
+    config = AutoConfig.from_pretrained(model_path)
+
+    counted_tokens = _count_video_tokens_via_processor(processor, dummy_video, fps=fps)
+
+    analyst = analyst_factory(processor, config)
+    metadata = get_video_metadata(dummy_video)
+
+    result = analyst.calculate_video(metadata, fps=fps)
+    analyst_tokens = result["number_of_video_tokens"]
+
     _assert_token_count_matches(counted_tokens, analyst_tokens)
