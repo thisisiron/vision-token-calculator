@@ -1,3 +1,5 @@
+import shutil
+from typing import Optional
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
@@ -5,7 +7,16 @@ from rich.text import Text
 from rich.align import Align
 from rich import box
 
-console = Console()
+MAX_CONSOLE_WIDTH = 120
+DEFAULT_TERMINAL_SIZE = (24, 80)
+
+try:
+    terminal_width = shutil.get_terminal_size(DEFAULT_TERMINAL_SIZE).columns
+    console_width = min(terminal_width, MAX_CONSOLE_WIDTH)
+except Exception:
+    console_width = MAX_CONSOLE_WIDTH
+
+console = Console(width=console_width)
 
 SEPARATOR = "=" * 72
 
@@ -81,6 +92,10 @@ def display_comparison_results(comparison: dict, source: str):
                 rank_str = "[yellow]🥈 2[/yellow]"
                 tokens_str = f"[yellow]{tokens:,}[/yellow]"
                 bar_str = f"[yellow]{bar}[/yellow]"
+            elif rank == 3:
+                rank_str = "[#cd7f32]🥉 3[/#cd7f32]"
+                tokens_str = f"[#cd7f32]{tokens:,}[/#cd7f32]"
+                bar_str = f"[#cd7f32]{bar}[/#cd7f32]"
             elif rank == len(valid_tokens):
                 rank_str = f"[red]{rank}[/red]"
                 tokens_str = f"[red]{tokens:,}[/red]"
@@ -162,7 +177,7 @@ def print_processing_status(filename: str, current: int, total: int):
     console.print(f"[{current}/{total}] Processing: {filename} ", end="")
 
 
-def print_processing_result(success: bool, token_count: int = None, error: str = None):
+def print_processing_result(success: bool, token_count: Optional[int] = None, error: Optional[str] = None):
     if success:
         console.print(f"[green]✓ ({token_count} tokens)[/green]")
     else:
@@ -181,7 +196,7 @@ class Reporter:
     def __init__(self, label_width: int = 42):
         self.label_width = label_width
 
-    def print(self, result: dict, model_name: str, image_source: str = None) -> None:
+    def print(self, result: dict, model_name: str, image_source: Optional[str] = None) -> None:
         """
         Display single image/video analysis results using Rich tables.
 

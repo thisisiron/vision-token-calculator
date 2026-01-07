@@ -12,7 +12,6 @@ from vt_calculator.video.backends import (
     is_torchvision_available,
     is_pyav_available,
 )
-from vt_calculator.video.video import get_reader
 
 
 class TestBackendAvailability:
