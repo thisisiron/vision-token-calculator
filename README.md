@@ -4,7 +4,7 @@ A Python tool for calculating the number of tokens generated when processing ima
 
 ## Features
 
-- Calculate image tokens for VLMs
+- Calculate image/video tokens for VLMs
 - Support both existing images and dummy images
 - Support remote images via URL (http/https)
 - Simple command line interface (CLI)
