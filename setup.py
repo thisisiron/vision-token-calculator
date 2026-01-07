@@ -40,6 +40,7 @@ setup(
         "test": [
             "pytest>=7.0.0",
             "qwen-vl-utils>=0.0.8",
+            "opencv-python>=4.5.0",
         ],
         "quality": ["ruff"],
     },

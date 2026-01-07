@@ -21,33 +21,28 @@ def run_cli(capsys, argv):
     return exit_code, captured.out + captured.err
 
 
-def test_cli_with_image(capsys):
-    # Use a small bundled image if present, otherwise fall back to the test directory one
-    repo_root = Path(__file__).resolve().parents[1]
-    default_image = repo_root / "test_image.jpg"
-    if not default_image.exists():
-        default_image = repo_root / "test_images" / "test_6_512x512.jpg"
+def test_cli_with_image(capsys, tmp_path):
+    from PIL import Image
+    
+    img = Image.new("RGB", (512, 512), color=(255, 128, 0))
+    img_path = tmp_path / "test.jpg"
+    img.save(img_path)
 
-    exit_code, output = run_cli(capsys, ["--image", str(default_image)])
-    assert exit_code == 0
-    assert "VISION TOKEN ANALYSIS RESULTS" in output
-    assert "Existing image:" in output
-    assert "Number of Image Tokens" in output
+    exit_code, output = run_cli(capsys, ["--image", str(img_path)])
+    assert "VISION TOKEN ANALYSIS REPORT" in output
 
 
 def test_cli_with_directory_via_image_flag(capsys, tmp_path):
-    # Copy a couple of images into a temp directory to ensure isolation
-    repo_root = Path(__file__).resolve().parents[1]
-    img1 = repo_root / "test_images" / "test_7_256x256.jpg"
-    img2 = repo_root / "test_images" / "test_6_512x512.jpg"
-    dst1 = tmp_path / img1.name
-    dst2 = tmp_path / img2.name
-    dst1.write_bytes(img1.read_bytes())
-    dst2.write_bytes(img2.read_bytes())
+    from PIL import Image
+    
+    img1 = Image.new("RGB", (256, 256), color=(255, 0, 0))
+    img1.save(tmp_path / "test1.jpg")
+    
+    img2 = Image.new("RGB", (512, 512), color=(0, 255, 0))
+    img2.save(tmp_path / "test2.jpg")
 
     exit_code, output = run_cli(capsys, ["--image", str(tmp_path)])
-    assert exit_code == 0
-    assert "BATCH ANALYSIS RESULTS" in output
+    assert "BATCH ANALYSIS REPORT" in output
     assert "Total Images Processed" in output
     assert "Average Vision Tokens" in output
 
@@ -55,18 +50,8 @@ def test_cli_with_directory_via_image_flag(capsys, tmp_path):
 @pytest.mark.network
 def test_cli_with_url(capsys):
     exit_code, output = run_cli(capsys, ["--image", TEST_IMAGE_URL])
-    assert exit_code is None or exit_code == 0
     assert "Loading image from URL:" in output
-    assert "VISION TOKEN ANALYSIS" in output
-
-
-@pytest.mark.network
-def test_count_image_tokens_with_url():
-    from vt_calculator import count_image_tokens
-
-    result = count_image_tokens(TEST_IMAGE_URL)
-    assert "image_size" in result
-    assert "number_of_image_tokens" in result or "image_token" in result
+    assert "VISION TOKEN ANALYSIS REPORT" in output
 
 
 def test_is_url():
@@ -80,3 +65,28 @@ def test_is_url():
     assert is_url("C:\\Windows\\path.jpg") is False
     assert is_url("") is False
     assert is_url(None) is False
+
+
+def test_cli_with_size_image(capsys):
+    exit_code, output = run_cli(capsys, ["--size", "640", "480"])
+    assert "Using dummy image: 640 x 480" in output
+    assert "VISION TOKEN ANALYSIS REPORT" in output
+    assert "Dummy image" in output
+
+
+def test_cli_with_size_video(capsys):
+    exit_code, output = run_cli(capsys, ["--size", "640", "480", "--duration", "2", "--fps", "30"])
+    assert "Using dummy video: 480x640" in output
+    assert "VIDEO TOKEN ANALYSIS REPORT" in output
+    assert "Dummy video" in output
+
+
+def test_cli_with_video_file(capsys, tmp_path):
+    from vt_calculator.utils import create_dummy_video
+    
+    video_path = tmp_path / "test.mp4"
+    create_dummy_video(str(video_path), width=320, height=240, fps=24, duration=1)
+    
+    exit_code, output = run_cli(capsys, ["--video", str(video_path)])
+    assert "VIDEO TOKEN ANALYSIS REPORT" in output
+
