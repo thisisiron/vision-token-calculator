@@ -3,7 +3,16 @@ import os
 from ..setup_env import setup_quiet_environment
 
 from PIL import Image
-from ..utils import get_image_files, calculate_mean, calculate_stdev, create_dummy_image, is_url, load_image_from_url
+from ..utils import (
+    get_image_files,
+    calculate_mean,
+    calculate_stdev,
+    create_dummy_image,
+    is_url,
+    load_image_from_url,
+    is_video,
+)
+from ..video import get_video_metadata
 from ..parser import parse_arguments
 from ..reporter import (
     display_batch_results,
@@ -41,7 +50,7 @@ def count_image_tokens(image_input, model_name: str = DEFAULT_MODEL):
 
     # PIL.Image.size -> (width, height); analyst expects (height, width)
     width, height = image_input.size
-    result = analyst.calculate((height, width))
+    result = analyst.calculate_image((height, width))
 
     # Backward-compatible total token count for batch statistics
     if (
@@ -57,6 +66,21 @@ def count_image_tokens(image_input, model_name: str = DEFAULT_MODEL):
         result["number_of_image_tokens"] = total_tokens
 
     return result
+
+
+def count_video_tokens(
+    video_path: str,
+    model_name: str = DEFAULT_MODEL,
+    fps: float = None,
+    max_frames: int = None,
+):
+    analyst = load_analyst(model_name)
+    metadata = get_video_metadata(video_path)
+    return analyst.calculate_video(
+        metadata,
+        fps=fps if fps is not None else None,
+        max_frames=max_frames if max_frames is not None else None
+    )
 
 
 def process_directory(directory_path: str, model_name: str):
@@ -115,7 +139,17 @@ def main():
     """
     args = parse_arguments()
 
-    if args.image:
+    if args.video:
+        if is_video(args.video):
+            result = count_video_tokens(
+                args.video, args.model_name, args.fps, args.max_frames
+            )
+            reporter = Reporter()
+            reporter.print(result, args.model_name, f"Video: {args.video}")
+        else:
+            print(f"Error: {args.video} is not a valid video file.")
+
+    elif args.image:
         if is_url(args.image):
             print(f"Loading image from URL: {args.image}")
             result = count_image_tokens(args.image, args.model_name)

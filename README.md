@@ -124,6 +124,19 @@ Found 8 images to process...
 ╰────────────────────────┴────────────╯
 ```
 
+### Video Token Calculation
+
+```bash
+# Calculate tokens for a video file
+vt-calc --video path/to/video.mp4 -m qwen2.5-vl
+
+# Specify frame sampling rate (FPS)
+vt-calc --video video.mp4 --fps 2.0
+
+# Limit maximum number of frames
+vt-calc --video video.mp4 --max-frames 100
+```
+
 ## Supported Models
 
 | Model | Option |
@@ -133,12 +146,6 @@ Found 8 images to process...
 | Qwen3-VL | qwen3-vl |
 | InternVL3 | internvl3 |
 | LLaVA | llava |
-
-### Example
-```bash
-vt-calc --model-name qwen2-vl
-```
-
 
 ## License
 

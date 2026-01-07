@@ -14,7 +14,7 @@ class VLMAnalyst:
     def __init__(self, processor):
         self.processor = processor
 
-    def calculate(self, image_size: Tuple[int, int]) -> dict:
+    def calculate_image(self, image_size: Tuple[int, int]) -> dict:
         """
         Calculate the number of image tokens for a given image size.
 
@@ -25,6 +25,26 @@ class VLMAnalyst:
             dict: A dictionary containing the number of image tokens and other relevant information.
         """
         raise NotImplementedError
+
+    def calculate_video(
+        self,
+        video_metadata: dict,
+        fps: float | None = None,
+        max_frames: int | None = None,
+    ) -> dict:
+        """
+        Calculate the number of video tokens.
+
+        Args:
+            video_metadata: dict with keys 'width', 'height', 'duration', 'total_frames'
+            fps: Target FPS for sampling
+            max_frames: Maximum number of frames to use
+
+        Returns:
+            dict: Token analysis results
+        """
+        raise NotImplementedError
+
 
 
 class LLaVAAnalyst(VLMAnalyst):
@@ -44,7 +64,7 @@ class LLaVAAnalyst(VLMAnalyst):
         )  # such as CLS (+1)
         self.vision_feature_select_strategy = processor.vision_feature_select_strategy
 
-    def calculate(self, image_size: Tuple[int, int]) -> dict:
+    def calculate_image(self, image_size: Tuple[int, int]) -> dict:
         num_tokens = (self.resized_height // self.patch_size) * (
             self.resized_width // self.patch_size
         ) + self.num_additional_image_tokens
@@ -86,7 +106,7 @@ class LLaVANextAnalyst(VLMAnalyst):
         )  # such as CLS (+1)
         self.vision_feature_select_strategy = processor.vision_feature_select_strategy
 
-    def calculate(self, image_size: Tuple[int, int]) -> dict:
+    def calculate_image(self, image_size: Tuple[int, int]) -> dict:
         best_resolution = select_best_resolution(image_size, self.grid_pinpoints)
         resized_height, resized_width = get_patch_output_size(
             image_size, best_resolution
@@ -138,6 +158,42 @@ class LLaVANextAnalyst(VLMAnalyst):
             "image_token_format": f"{self.image_token}*{num_image_tokens}",
         }
 
+    def calculate_video(
+        self,
+        video_metadata: dict,
+        fps: float | None = None,
+        max_frames: int | None = None,
+    ) -> dict:
+        width = video_metadata["width"]
+        height = video_metadata["height"]
+        duration = video_metadata["duration"]
+
+        target_fps = fps if fps else 1.0
+        num_frames = int(duration * target_fps)
+        if num_frames == 0:
+            num_frames = 1
+            
+        if max_frames and num_frames > max_frames:
+            num_frames = max_frames
+            target_fps = num_frames / duration if duration > 0 else target_fps
+
+        frame_result = self.calculate_image((height, width))
+        tokens_per_frame = frame_result["image_token"][1]
+        
+        total_tokens = tokens_per_frame * num_frames
+
+        return {
+            "type": "video",
+            "number_of_video_tokens": total_tokens,
+            "sampled_frames": num_frames,
+            "fps": target_fps,
+            "duration": duration,
+            "grid_size": (0, 0),
+            "resized_size": frame_result["resized_size"],
+            "image_token": (self.image_token, total_tokens),
+            "token_format": f"({self.image_token}...) * {num_frames}",
+        }
+
 
 class LlavaOnevisionAnalyst(VLMAnalyst):
     def __init__(self, processor, config):
@@ -160,7 +216,7 @@ class LlavaOnevisionAnalyst(VLMAnalyst):
         self.vision_feature_select_strategy = processor.vision_feature_select_strategy
         self.max_num_patches = int(processor.vision_aspect_ratio.strip("anyres_max_"))
 
-    def calculate(self, image_size: Tuple[int, int]) -> dict:
+    def calculate_image(self, image_size: Tuple[int, int]) -> dict:
         best_resolution = select_best_resolution(image_size, self.grid_pinpoints)
         resized_height, resized_width = get_patch_output_size(
             image_size, best_resolution
@@ -220,6 +276,7 @@ class Qwen2VLAnalyst(VLMAnalyst):
         self.image_token: str = "<|image_pad|>"
         self.image_start_token: str = "<|vision_start|>"
         self.image_end_token: str = "<|vision_end|>"
+        self.video_token: str = "<|video_pad|>"
 
         self.patch_size = processor.image_processor.patch_size
         self.merge_size = processor.image_processor.merge_size
@@ -231,8 +288,10 @@ class Qwen2VLAnalyst(VLMAnalyst):
             processor.image_processor.max_pixels
             or processor.image_processor.size["longest_edge"]
         )
+        self.temporal_patch_size = 2
 
-    def calculate(self, image_size: Tuple[int, int]) -> dict:
+    def calculate_image(self, image_size: Tuple[int, int]) -> dict:
+
         resized_h, resized_w, grid_h, grid_w = resize_and_grid(
             image_size,
             self.patch_size,
@@ -256,6 +315,53 @@ class Qwen2VLAnalyst(VLMAnalyst):
             "image_start_token": (self.image_start_token, 1),
             "image_end_token": (self.image_end_token, 1),
             "image_token_format": f"{self.image_start_token}{self.image_token}*{num_tokens}{self.image_end_token}",
+        }
+
+    def calculate_video(
+        self,
+        video_metadata: dict,
+        fps: float | None = None,
+        max_frames: int | None = None,
+    ) -> dict:
+        width = video_metadata["width"]
+        height = video_metadata["height"]
+        duration = video_metadata["duration"]
+
+        target_fps = fps if fps else 2.0
+        
+        num_frames = int(duration * target_fps)
+        if num_frames == 0:
+            num_frames = 1
+            
+        if max_frames and num_frames > max_frames:
+            num_frames = max_frames
+
+        resized_h, resized_w, grid_h, grid_w = resize_and_grid(
+            (height, width),
+            self.patch_size,
+            self.merge_size,
+            self.min_pixels,
+            self.max_pixels,
+        )
+
+        tokens_per_frame = (grid_h * grid_w) // (self.merge_size**2)
+        
+        num_video_tokens = (
+            tokens_per_frame * num_frames
+        ) // self.temporal_patch_size
+
+        return {
+            "type": "video",
+            "number_of_video_tokens": num_video_tokens,
+            "sampled_frames": num_frames,
+            "fps": target_fps,
+            "duration": duration,
+            "grid_size": (grid_h, grid_w),
+            "resized_size": (resized_h, resized_w),
+            "image_token": (self.video_token, num_video_tokens),
+            "image_start_token": (self.image_start_token, 1),
+            "image_end_token": (self.image_end_token, 1),
+            "token_format": f"{self.image_start_token}{self.video_token}*{num_video_tokens}{self.image_end_token}",
         }
 
 
@@ -291,7 +397,7 @@ class InternVLAnalyst(VLMAnalyst):
             self.tile_size // self.patch_size // self.pixel_unshuffle_size
         ) ** 2
 
-    def calculate(self, image_size: Tuple[int, int]) -> dict:
+    def calculate_image(self, image_size: Tuple[int, int]) -> dict:
         num_patches = 1
         grid_w, grid_h = get_optimal_tiled_canvas(
             image_size,
@@ -316,4 +422,40 @@ class InternVLAnalyst(VLMAnalyst):
             "image_start_token": (self.image_start_token, 1),
             "image_end_token": (self.image_end_token, 1),
             "image_token_format": f"{self.image_start_token}{self.image_token}*{self.image_seq_length}{self.image_token}*{self.image_seq_length}...{self.image_end_token}",
+        }
+
+    def calculate_video(
+        self,
+        video_metadata: dict,
+        fps: float | None = None,
+        max_frames: int | None = None,
+    ) -> dict:
+        width = video_metadata["width"]
+        height = video_metadata["height"]
+        duration = video_metadata["duration"]
+
+        target_fps = fps if fps else 1.0
+        num_frames = int(duration * target_fps)
+        if num_frames == 0:
+            num_frames = 1
+            
+        if max_frames and num_frames > max_frames:
+            num_frames = max_frames
+            target_fps = num_frames / duration if duration > 0 else target_fps
+
+        frame_result = self.calculate_image((height, width))
+        tokens_per_frame = frame_result["image_token"][1]
+        
+        total_tokens = (tokens_per_frame + 2) * num_frames
+
+        return {
+            "type": "video",
+            "number_of_video_tokens": total_tokens,
+            "sampled_frames": num_frames,
+            "fps": target_fps,
+            "duration": duration,
+            "grid_size": frame_result["grid_size"],
+            "resized_size": frame_result["resized_size"],
+            "image_token": (self.image_token, total_tokens),
+            "token_format": f"({self.image_start_token}...{self.image_end_token}) * {num_frames}",
         }

@@ -80,13 +80,16 @@ class Reporter:
 
     def print(self, result: dict, model_name: str, image_source: str = None) -> None:
         """
-        Display single image analysis results using Rich tables.
+        Display single image/video analysis results using Rich tables.
 
         Args:
             result (dict): Token count result dictionary
             model_name (str): Short model name used for processing
-            image_source (str): Optional description of image source
+            image_source (str): Optional description of image/video source
         """
+        is_video = result.get("type") == "video"
+        title = "VISION TOKEN ANALYSIS REPORT" if not is_video else "VIDEO TOKEN ANALYSIS REPORT"
+
         # Main Layout Table
         grid = Table.grid(expand=True)
         grid.add_column()
@@ -95,7 +98,7 @@ class Reporter:
         grid.add_row(
             Align.center(
                 Panel(
-                    "[bold cyan]VISION TOKEN ANALYSIS REPORT[/bold cyan]",
+                    f"[bold cyan]{title}[/bold cyan]",
                     box=box.DOUBLE,
                     expand=False,
                 )
@@ -116,23 +119,33 @@ class Reporter:
             )
         )
 
-        # IMAGE INFO
-        image_table = Table(box=box.SIMPLE, show_header=False, expand=True)
-        image_table.add_column("Key", style="cyan", ratio=1)
-        image_table.add_column("Value", style="bold white", ratio=2)
-        image_table.add_row("Image Source", image_source)
-        image_table.add_row(
-            "Original Size (H x W)",
-            f"{result['image_size'][0]} x {result['image_size'][1]}",
-        )
-        image_table.add_row(
-            "Resized Size (H x W)",
-            f"{result['resized_size'][0]} x {result['resized_size'][1]}",
-        )
+        input_table = Table(box=box.SIMPLE, show_header=False, expand=True)
+        input_table.add_column("Key", style="cyan", ratio=1)
+        input_table.add_column("Value", style="bold white", ratio=2)
+        input_table.add_row("Source", image_source)
+        
+        if is_video:
+            input_table.add_row("Duration", f"{result['duration']:.2f}s")
+            input_table.add_row("FPS (Sampled)", f"{result['fps']:.2f}")
+            input_table.add_row("Sampled Frames", str(result['sampled_frames']))
+            input_table.add_row(
+                "Resolution (H x W)",
+                f"{result['resized_size'][0]} x {result['resized_size'][1]} (Resized)",
+            )
+        else:
+            input_table.add_row(
+                "Original Size (H x W)",
+                f"{result['image_size'][0]} x {result['image_size'][1]}",
+            )
+            input_table.add_row(
+                "Resized Size (H x W)",
+                f"{result['resized_size'][0]} x {result['resized_size'][1]}",
+            )
+            
         grid.add_row(
             Panel(
-                image_table,
-                title="[bold]IMAGE INFO[/bold]",
+                input_table,
+                title="[bold]VIDEO INFO[/bold]" if is_video else "[bold]IMAGE INFO[/bold]",
                 border_style="green",
                 box=box.ROUNDED,
             )
@@ -142,18 +155,27 @@ class Reporter:
         patch_table = Table(box=box.SIMPLE, show_header=False, expand=True)
         patch_table.add_column("Key", style="cyan", ratio=1)
         patch_table.add_column("Value", style="bold white", ratio=2)
-        patch_table.add_row("Patch Size (ViT)", str(result["patch_size"]))
-        if "tile_size" in result:
-            patch_table.add_row("Tile Size", str(result["tile_size"]))
-        if "grid_size" in result:
+        
+        if is_video:
+             if "grid_size" in result:
+                patch_table.add_row(
+                    "Grid Size (per frame)",
+                    f"{result['grid_size'][0]} x {result['grid_size'][1]}",
+                )
+        else:
+            patch_table.add_row("Patch Size (ViT)", str(result.get("patch_size", "N/A")))
+            if "tile_size" in result:
+                patch_table.add_row("Tile Size", str(result["tile_size"]))
+            if "grid_size" in result:
+                patch_table.add_row(
+                    "Grid Size (H x W)",
+                    f"{result['grid_size'][0]} x {result['grid_size'][1]}",
+                )
             patch_table.add_row(
-                "Grid Size (H x W)",
-                f"{result['grid_size'][0]} x {result['grid_size'][1]}",
+                "Number of Patches",
+                f"{result['number_of_image_patches']} {'(global patch)' if result.get('has_global_patch') else ''}",
             )
-        patch_table.add_row(
-            "Number of Patches",
-            f"{result['number_of_image_patches']} {'(global patch)' if result['has_global_patch'] else ''}",
-        )
+            
         grid.add_row(
             Panel(
                 patch_table,
@@ -168,9 +190,14 @@ class Reporter:
         token_info_table.add_column("Key", style="cyan", ratio=1)
         token_info_table.add_column("Value", style="bold white", ratio=2)
 
-        # Prepare token info items
         items_to_show = []
-        for key in ["image_token", "image_start_token", "image_end_token"]:
+        keys_to_check = ["number_of_video_tokens", "image_token", "image_start_token", "image_end_token"]
+        
+        for key in keys_to_check:
+            if key == "number_of_video_tokens" and key in result:
+                 items_to_show.append(("Total Video Tokens", result[key]))
+                 continue
+
             value = result.get(key)
             if isinstance(value, (list, tuple)) and len(value) == 2:
                 token_symbol, token_count = value
@@ -191,14 +218,17 @@ class Reporter:
             )
 
             # TOKEN FORMAT
-            format_panel = Panel(
-                Text(
-                    result["image_token_format"], style="bold white", justify="center"
-                ),
-                title="[bold]TOKEN FORMAT[/bold]",
-                border_style="white",
-                box=box.ROUNDED,
-            )
-            grid.add_row(format_panel)
+            if "token_format" in result or "image_token_format" in result:
+                fmt = result.get("token_format", result.get("image_token_format"))
+                format_panel = Panel(
+                    Text(
+                        fmt, style="bold white", justify="center"
+                    ),
+                    title="[bold]TOKEN FORMAT[/bold]",
+                    border_style="white",
+                    box=box.ROUNDED,
+                )
+                grid.add_row(format_panel)
 
         console.print(grid)
+
