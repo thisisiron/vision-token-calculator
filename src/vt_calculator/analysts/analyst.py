@@ -1,3 +1,4 @@
+import math
 from typing import Tuple
 
 from .tools import (
@@ -7,6 +8,7 @@ from .tools import (
     get_patch_output_size,
     get_padding_size,
     get_unpadded_features,
+    smart_resize_video,
 )
 
 
@@ -366,7 +368,72 @@ class Qwen2_5_VLAnalyst(Qwen2VLAnalyst):
 
 
 class Qwen3VLAnalyst(Qwen2VLAnalyst):
-    pass
+    ASSUMED_SOURCE_FPS = 24.0
+
+    def __init__(self, processor):
+        super().__init__(processor)
+        self.min_frames = 4
+        self.max_frames = 768
+        self.video_min_pixels = processor.video_processor.size["shortest_edge"]
+        self.video_max_pixels = processor.video_processor.size["longest_edge"]
+        self.target_fps = processor.video_processor.fps
+
+    def calculate_video(
+        self,
+        video_metadata: dict,
+        fps: float | None = None,
+        max_frames: int | None = None,
+    ) -> dict:
+        width = video_metadata["width"]
+        height = video_metadata["height"]
+        duration = video_metadata["duration"]
+        source_fps = video_metadata.get("fps", self.ASSUMED_SOURCE_FPS)
+        total_frames = video_metadata.get("total_frames", int(duration * source_fps))
+
+        sampling_fps = fps if fps else self.target_fps
+        extracted_frames = int(total_frames / source_fps * sampling_fps)
+        extracted_frames = max(extracted_frames, 1)
+
+        if max_frames and extracted_frames > max_frames:
+            extracted_frames = max_frames
+
+        num_frames = int(extracted_frames / self.ASSUMED_SOURCE_FPS * self.target_fps)
+        num_frames = min(
+            max(num_frames, self.min_frames), self.max_frames, extracted_frames
+        )
+
+        factor = self.patch_size * self.merge_size
+        resized_h, resized_w = smart_resize_video(
+            num_frames=num_frames,
+            height=height,
+            width=width,
+            temporal_factor=self.temporal_patch_size,
+            factor=factor,
+            min_pixels=self.video_min_pixels,
+            max_pixels=self.video_max_pixels,
+        )
+
+        t_bar = math.ceil(num_frames / self.temporal_patch_size) * self.temporal_patch_size
+        grid_t = t_bar // self.temporal_patch_size
+        grid_h = resized_h // self.patch_size
+        grid_w = resized_w // self.patch_size
+
+        num_video_tokens = grid_t * grid_h * grid_w // (self.merge_size**2)
+
+        return {
+            "type": "video",
+            "number_of_video_tokens": num_video_tokens,
+            "sampled_frames": num_frames,
+            "fps": sampling_fps,
+            "duration": duration,
+            "grid_size": (grid_h, grid_w),
+            "grid_t": grid_t,
+            "resized_size": (resized_h, resized_w),
+            "image_token": (self.video_token, num_video_tokens),
+            "image_start_token": (self.image_start_token, 1),
+            "image_end_token": (self.image_end_token, 1),
+            "token_format": f"{self.image_start_token}{self.video_token}*{num_video_tokens}{self.image_end_token}",
+        }
 
 
 class InternVLAnalyst(VLMAnalyst):
