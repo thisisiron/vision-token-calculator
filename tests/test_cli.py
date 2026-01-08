@@ -9,12 +9,12 @@ TEST_IMAGE_URL = (
 
 
 def run_cli(capsys, argv):
-    import vt_calculator.core.calculator as calc
+    from vt_calculator.cli.main import main
 
     old_argv = sys.argv
     try:
         sys.argv = ["vt-calc", *argv]
-        exit_code = calc.main()
+        exit_code = main()
     finally:
         sys.argv = old_argv
 

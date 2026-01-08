@@ -8,11 +8,13 @@ from rich.align import Align
 from rich import box
 
 MAX_CONSOLE_WIDTH = 120
+MIN_CONSOLE_WIDTH = 80
 DEFAULT_TERMINAL_SIZE = (24, 80)
 
 try:
     terminal_width = shutil.get_terminal_size(DEFAULT_TERMINAL_SIZE).columns
     console_width = min(terminal_width, MAX_CONSOLE_WIDTH)
+    console_width = max(console_width, MIN_CONSOLE_WIDTH)
 except Exception:
     console_width = MAX_CONSOLE_WIDTH
 
