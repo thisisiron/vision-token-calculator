@@ -1,9 +1,16 @@
+"""CLI argument parser for vt-calc."""
+
 import argparse
 
-from .analysts import SUPPORTED_MODELS, DEFAULT_MODEL
+from ..analysts import SUPPORTED_MODELS, DEFAULT_MODEL
 
 
 def parse_arguments():
+    """Parse command line arguments.
+
+    Returns:
+        argparse.Namespace: Parsed arguments
+    """
     parser = argparse.ArgumentParser(description="Vision Token Calculator")
 
     input_group = parser.add_mutually_exclusive_group(required=True)
@@ -49,7 +56,7 @@ def parse_arguments():
         "--fps",
         type=float,
         default=None,
-        help="Frames per second to sample for video analysis (default: model specific, usually 1 or 2)",
+        help="Frames per second to sample for video analysis (default: model specific)",
     )
 
     parser.add_argument(
