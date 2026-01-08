@@ -7,6 +7,7 @@ from vt_calculator.utils import create_dummy_image
 from vt_calculator.video import get_video_metadata, extract_video_frames
 from vt_calculator.analysts.analyst import (
     Qwen2_5_VLAnalyst,
+    Qwen3VLAnalyst,
     InternVLAnalyst,
     LLaVAAnalyst,
     LLaVANextAnalyst,
@@ -140,6 +141,13 @@ def _count_video_tokens_via_processor(processor, video_path, fps=None) -> int:
             id="qwen2.5-vl",
         ),
         pytest.param(
+            "Qwen/Qwen3-VL-2B-Instruct",
+            lambda proc, cfg: Qwen3VLAnalyst(proc),
+            (800, 800),
+            False,
+            id="qwen3-vl",
+        ),
+        pytest.param(
             "OpenGVLab/InternVL3-1B-hf",
             lambda proc, cfg: InternVLAnalyst(proc, cfg),
             (800, 800),
@@ -197,6 +205,12 @@ def test_analyst_token_count_matches_transformers(
             lambda proc, cfg: Qwen2_5_VLAnalyst(proc),
             1.0,
             id="qwen2.5-vl-video",
+        ),
+        pytest.param(
+            "Qwen/Qwen3-VL-2B-Instruct",
+            lambda proc, cfg: Qwen3VLAnalyst(proc),
+            1.0,
+            id="qwen3-vl-video",
         ),
     ],
 )
