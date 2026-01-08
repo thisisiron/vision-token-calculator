@@ -413,7 +413,9 @@ class Qwen3VLAnalyst(Qwen2VLAnalyst):
             max_pixels=self.video_max_pixels,
         )
 
-        t_bar = math.ceil(num_frames / self.temporal_patch_size) * self.temporal_patch_size
+        t_bar = (
+            math.ceil(num_frames / self.temporal_patch_size) * self.temporal_patch_size
+        )
         grid_t = t_bar // self.temporal_patch_size
         grid_h = resized_h // self.patch_size
         grid_w = resized_w // self.patch_size
