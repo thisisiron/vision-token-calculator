@@ -152,7 +152,9 @@ class LLaVANextAnalyst(VLMAnalyst):
         return {
             "number_of_image_patches": num_patches,
             "patch_size": self.patch_size,
-            "has_global_patch": False,
+            "tile_size": self.tile_size[0],
+            "grid_size": (scale_height, scale_width),
+            "has_global_patch": True,
             "image_size": image_size,
             "resized_size": (resized_height, resized_width),
             "image_token": (self.image_token, num_image_tokens),
