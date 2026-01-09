@@ -246,6 +246,42 @@ def resize_and_grid(
     return resized_h, resized_w, grid_h, grid_w
 
 
+def count_tiles_deepseek(
+    orig_width: int,
+    orig_height: int,
+    min_num: int = 2,
+    max_num: int = 9,
+    image_size: int = 640,
+) -> Tuple[int, int]:
+    """Determine the crop tile grid for DeepSeek-OCR Gundam mode.
+
+    If the image is at or below 640x640, no crops are applied (returns (1,1)).
+    Otherwise, dynamic tiling is applied based on aspect ratio.
+
+    Based on DeepSeek-OCR's infer method logic.
+
+    Args:
+        orig_width: Original image width in pixels.
+        orig_height: Original image height in pixels.
+        min_num: Minimum number of total crops allowed.
+        max_num: Maximum number of total crops allowed.
+        image_size: Size of each crop tile (default 640 for DeepSeek-OCR).
+
+    Returns:
+        Tuple of (width_tiles, height_tiles) representing the crop grid.
+        Returns (1, 1) if image is at or below threshold (no crops).
+    """
+    if orig_width <= image_size and orig_height <= image_size:
+        return (1, 1)
+
+    return get_optimal_tiled_canvas(
+        original_image_size=(orig_height, orig_width),
+        target_tile_size=(image_size, image_size),
+        min_image_tiles=min_num,
+        max_image_tiles=max_num,
+    )
+
+
 def smart_resize_video(
     num_frames: int,
     height: int,
