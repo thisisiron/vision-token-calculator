@@ -739,3 +739,114 @@ class DeepSeekOCRAnalyst(VLMAnalyst):
         max_frames: int | None = None,
     ) -> dict:
         raise NotImplementedError("DeepSeek-OCR does not support video input")
+
+
+class Phi4MultimodalAnalyst(VLMAnalyst):
+    """Phi-4-Multimodal vision token calculator.
+
+    Token formula:
+        num_tokens = 273 + 256 * h_crops * w_crops + 16 * h_crops
+
+    Where:
+    - 256: Global image tokens (16x16 grid from 448/14/2)
+    - 1: Separator token
+    - 256 * h * w: HD patch tokens
+    - 16 * h: Row-level tokens
+    - 16: Fixed overhead
+
+    Constants:
+    - image_size = 448
+    - patch_size = 14
+    - downsample_ratio = 2
+    """
+
+    IMAGE_SIZE = 448
+    PATCH_SIZE = 14
+    DOWNSAMPLE_RATIO = 2
+    MIN_CROPS = 1
+    MAX_CROPS = 36
+
+    def __init__(self):
+        super().__init__(processor=None)
+        self.image_token = "<|image|>"
+        self.image_size = self.IMAGE_SIZE
+        self.patch_size = self.PATCH_SIZE
+        # After patch + downsample: 448/14/2 = 16
+        self.grid_size = self.IMAGE_SIZE // self.PATCH_SIZE // self.DOWNSAMPLE_RATIO
+
+    def _calculate_crop_grid(self, height: int, width: int) -> Tuple[int, int]:
+        """Calculate optimal crop grid for given image dimensions."""
+        if height <= self.image_size and width <= self.image_size:
+            return (1, 1)
+
+        return get_optimal_tiled_canvas(
+            original_image_size=(height, width),
+            target_tile_size=(self.image_size, self.image_size),
+            min_image_tiles=self.MIN_CROPS,
+            max_image_tiles=self.MAX_CROPS,
+        )
+
+    def _calculate_tokens(self, h_crops: int, w_crops: int) -> int:
+        """Calculate total tokens for given crop grid.
+
+        For small images (1x1 crop): 256 + 1 + 16 = 273 (no HD)
+        For larger images: 273 + 256 * h * w + 16 * h
+        """
+        global_tokens = self.grid_size * self.grid_size  # 256
+        separator = 1
+        overhead = 16
+
+        # No HD processing for 1x1 (small images)
+        if h_crops == 1 and w_crops == 1:
+            return global_tokens + separator + overhead
+
+        # HD processing for larger images
+        hd_tokens = h_crops * w_crops * global_tokens
+        row_tokens = h_crops * self.grid_size
+
+        return global_tokens + separator + hd_tokens + row_tokens + overhead
+
+    def calculate_image(self, image_size: Tuple[int, int]) -> dict:
+        height, width = image_size
+        w_crops, h_crops = self._calculate_crop_grid(height, width)
+        total_tokens = self._calculate_tokens(h_crops, w_crops)
+
+        # Determine processing method based on crop grid
+        is_tiled = h_crops > 1 or w_crops > 1
+        patches_per_tile = self.grid_size * self.grid_size
+
+        if is_tiled:
+            return {
+                "processing_method": "tile_based",
+                "image_token": (self.image_token, total_tokens),
+                "image_token_format": f"{self.image_token}*{total_tokens}",
+                "image_size": (height, width),
+                "resized_size": (self.image_size * h_crops, self.image_size * w_crops),
+                "tile_size": self.image_size,
+                "tile_grid": (h_crops, w_crops),
+                "number_of_tiles": h_crops * w_crops + 1,
+                "has_global_patch": True,
+                "patch_size": self.patch_size,
+                "patches_per_tile": patches_per_tile,
+                "total_patches": (h_crops * w_crops + 1) * patches_per_tile,
+            }
+        else:
+            return {
+                "processing_method": "fixed_resolution",
+                "image_token": (self.image_token, total_tokens),
+                "image_token_format": f"{self.image_token}*{total_tokens}",
+                "image_size": (height, width),
+                "resized_size": (self.image_size, self.image_size),
+                "patch_size": self.patch_size,
+                "patch_grid": (self.grid_size, self.grid_size),
+                "total_patches": patches_per_tile,
+                "has_global_patch": False,
+            }
+
+    def calculate_video(
+        self,
+        video_metadata: dict,
+        fps: float | None = None,
+        max_frames: int | None = None,
+    ) -> dict:
+        raise NotImplementedError("Phi-4-Multimodal video not yet supported")
