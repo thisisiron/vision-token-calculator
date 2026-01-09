@@ -6,13 +6,13 @@ from .analyst import (
     LLaVAAnalyst,
     LLaVANextAnalyst,
     LlavaOnevisionAnalyst,
+    DeepSeekOCRAnalyst,
 )
 from transformers import AutoProcessor, AutoConfig
-from typing import Callable, Dict, Tuple
+from typing import Callable, Dict, Optional, Tuple
 
 
-# Mapping from short model name to Hugging Face repository id
-MODEL_TO_HF_ID: dict[str, str] = {
+MODEL_TO_HF_ID: dict[str, Optional[str]] = {
     "qwen2.5-vl": "Qwen/Qwen2.5-VL-3B-Instruct",
     "qwen2-vl": "Qwen/Qwen2-VL-2B-Instruct",
     "qwen3-vl": "Qwen/Qwen3-VL-2B-Instruct",
@@ -20,6 +20,11 @@ MODEL_TO_HF_ID: dict[str, str] = {
     "llava": "llava-hf/llava-1.5-7b-hf",
     "llava-next": "llava-hf/llava-v1.6-mistral-7b-hf",
     "llava-onevision": "llava-hf/llava-onevision-qwen2-7b-ov-hf",
+    "deepseek-ocr-tiny": None,
+    "deepseek-ocr-small": None,
+    "deepseek-ocr-base": None,
+    "deepseek-ocr-large": None,
+    "deepseek-ocr-gundam": None,
 }
 
 SUPPORTED_MODELS: set[str] = set(MODEL_TO_HF_ID.keys())
@@ -28,15 +33,7 @@ SUPPORTED_MODELS: set[str] = set(MODEL_TO_HF_ID.keys())
 DEFAULT_MODEL: str = "qwen2.5-vl"
 
 
-def map_model_id(model_name: str) -> str:
-    """Map a supported short model name to its HF id.
-
-    Args:
-        model_name (str): Short model name such as "qwen2.5-vl" or "internvl3".
-
-    Returns:
-        str: Hugging Face repository id for the given model name.
-    """
+def map_model_id(model_name: str) -> Optional[str]:
     key = model_name.strip().lower()
     if key not in SUPPORTED_MODELS:
         raise ValueError(f"Unsupported model: {model_name}")
@@ -44,18 +41,12 @@ def map_model_id(model_name: str) -> str:
 
 
 def load_analyst(model_name: str = DEFAULT_MODEL):
-    """Factory that builds the correct analyst for a given short model name.
-
-    Selection is handled via a small registry mapping so it is easy to extend
-    with additional models without modifying conditional logic.
-    """
-    model_id = map_model_id(model_name)
-
+    """Factory that builds the correct analyst for a given short model name."""
     key = model_name.strip().lower()
 
-    # Analyst builders receive (processor, config) and must return an instance
-    # of a VLMAnalyst subclass. The config argument may be ignored when not
-    # needed by the analyst.
+    if key not in SUPPORTED_MODELS:
+        raise ValueError(f"Unsupported model: {model_name}")
+
     ANALYST_REGISTRY: Dict[str, Tuple[Callable, bool]] = {
         "qwen2.5-vl": (lambda proc, cfg: Qwen2_5_VLAnalyst(proc), False),
         "qwen2-vl": (lambda proc, cfg: Qwen2VLAnalyst(proc), False),
@@ -64,12 +55,21 @@ def load_analyst(model_name: str = DEFAULT_MODEL):
         "llava": (lambda proc, cfg: LLaVAAnalyst(proc), False),
         "llava-next": (lambda proc, cfg: LLaVANextAnalyst(proc), False),
         "llava-onevision": (lambda proc, cfg: LlavaOnevisionAnalyst(proc, cfg), True),
+        "deepseek-ocr-tiny": (lambda proc, cfg: DeepSeekOCRAnalyst(mode="tiny"), False),
+        "deepseek-ocr-small": (lambda proc, cfg: DeepSeekOCRAnalyst(mode="small"), False),
+        "deepseek-ocr-base": (lambda proc, cfg: DeepSeekOCRAnalyst(mode="base"), False),
+        "deepseek-ocr-large": (lambda proc, cfg: DeepSeekOCRAnalyst(mode="large"), False),
+        "deepseek-ocr-gundam": (lambda proc, cfg: DeepSeekOCRAnalyst(mode="gundam"), False),
     }
 
     if key not in ANALYST_REGISTRY:
         raise ValueError(f"No analyst registered for model: {model_name}")
 
     builder, needs_config = ANALYST_REGISTRY[key]
+
+    model_id = MODEL_TO_HF_ID.get(key)
+    if model_id is None:
+        return builder(None, None)
 
     processor = AutoProcessor.from_pretrained(model_id)
     config = AutoConfig.from_pretrained(model_id) if needs_config else None
@@ -85,6 +85,7 @@ __all__ = [
     "LLaVAAnalyst",
     "LLaVANextAnalyst",
     "LlavaOnevisionAnalyst",
+    "DeepSeekOCRAnalyst",
     "load_analyst",
     "map_model_id",
     "SUPPORTED_MODELS",

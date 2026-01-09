@@ -524,3 +524,114 @@ class InternVLAnalyst(VLMAnalyst):
             "image_token": (self.image_token, total_tokens),
             "token_format": f"({self.image_start_token}...{self.image_end_token}) * {num_frames}",
         }
+
+
+class DeepSeekOCRAnalyst(VLMAnalyst):
+    MODES = {
+        "tiny": {"base_size": 512, "image_size": 512, "crop_mode": False},
+        "small": {"base_size": 640, "image_size": 640, "crop_mode": False},
+        "base": {"base_size": 1024, "image_size": 1024, "crop_mode": False},
+        "large": {"base_size": 1280, "image_size": 1280, "crop_mode": False},
+        "gundam": {"base_size": 1024, "image_size": 640, "crop_mode": True},
+    }
+
+    PATCH_SIZE = 16
+    DOWNSAMPLE_RATIO = 4
+    MIN_CROPS = 2
+    MAX_CROPS = 9
+
+    def __init__(self, mode: str = "base"):
+        super().__init__(processor=None)
+
+        if mode not in self.MODES:
+            raise ValueError(
+                f"Invalid mode: {mode}. Choose from {list(self.MODES.keys())}"
+            )
+
+        self.mode = mode
+        self.image_token = "<image>"
+        self.patch_size = self.PATCH_SIZE
+        self.downsample_ratio = self.DOWNSAMPLE_RATIO
+
+        config = self.MODES[mode]
+        self.base_size = config["base_size"]
+        self.image_size = config["image_size"]
+        self.crop_mode = config["crop_mode"]
+
+    def _calculate_num_queries(self, size: int) -> int:
+        return math.ceil((size // self.patch_size) / self.downsample_ratio)
+
+    def _calculate_native_tokens(self, num_queries: int) -> int:
+        return (num_queries + 1) * num_queries + 1
+
+    def _calculate_local_tokens(
+        self, num_queries: int, width_tiles: int, height_tiles: int
+    ) -> int:
+        return (num_queries * width_tiles + 1) * (num_queries * height_tiles)
+
+    def calculate_image(self, image_size: Tuple[int, int]) -> dict:
+        height, width = image_size
+
+        if self.crop_mode:
+            return self._calculate_gundam_mode(height, width)
+        else:
+            return self._calculate_native_mode(height, width)
+
+    def _calculate_native_mode(self, height: int, width: int) -> dict:
+        num_queries = self._calculate_num_queries(self.image_size)
+        total_tokens = self._calculate_native_tokens(num_queries)
+
+        return {
+            "image_token": (self.image_token, total_tokens),
+            "image_token_format": f"{self.image_token}*{total_tokens}",
+            "image_size": (height, width),
+            "mode": self.mode,
+            "base_size": self.base_size,
+            "patch_size": self.patch_size,
+            "num_queries": num_queries,
+        }
+
+    def _calculate_gundam_mode(self, height: int, width: int) -> dict:
+        from .tools import count_tiles_deepseek
+
+        num_queries_base = self._calculate_num_queries(self.base_size)
+        num_queries_local = self._calculate_num_queries(self.image_size)
+
+        global_tokens = self._calculate_native_tokens(num_queries_base)
+
+        crop_grid = count_tiles_deepseek(
+            orig_width=width,
+            orig_height=height,
+            min_num=self.MIN_CROPS,
+            max_num=self.MAX_CROPS,
+            image_size=self.image_size,
+        )
+        width_tiles, height_tiles = crop_grid
+
+        local_tokens = 0
+        if width_tiles > 1 or height_tiles > 1:
+            local_tokens = self._calculate_local_tokens(
+                num_queries_local, width_tiles, height_tiles
+            )
+
+        total_tokens = global_tokens + local_tokens
+
+        return {
+            "image_token": (self.image_token, total_tokens),
+            "image_token_format": f"{self.image_token}*{total_tokens}",
+            "image_size": (height, width),
+            "mode": self.mode,
+            "base_size": self.base_size,
+            "patch_size": self.patch_size,
+            "crop_grid": crop_grid,
+            "num_global_tokens": global_tokens,
+            "num_local_tokens": local_tokens,
+        }
+
+    def calculate_video(
+        self,
+        video_metadata: dict,
+        fps: float | None = None,
+        max_frames: int | None = None,
+    ) -> dict:
+        raise NotImplementedError("DeepSeek-OCR does not support video input")
