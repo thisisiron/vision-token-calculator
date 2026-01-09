@@ -598,10 +598,10 @@ class DeepSeekOCRAnalyst(VLMAnalyst):
         total_tokens = self._calculate_native_tokens(num_queries)
         num_patches = (self.image_size // self.patch_size) ** 2
 
-        # Format: (<image>×N + <newline>) × N rows + <end>
+        # Format: (<image>×N + <image_newline>) × N rows + <image_seperator>
         token_format = (
-            f"({self.image_token}×{num_queries} + <newline>) "
-            f"× {num_queries} + <end> = {total_tokens}"
+            f"({self.image_token}×{num_queries} + <image_newline>) "
+            f"× {num_queries} + <image_seperator> = {total_tokens}"
         )
 
         return {
