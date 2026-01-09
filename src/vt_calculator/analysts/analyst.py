@@ -643,6 +643,7 @@ class DeepSeekOCRAnalyst(VLMAnalyst):
             "base_size": self.base_size,
             "patch_size": self.patch_size,
             "crop_grid": crop_grid,
+            "grid_size": (height_tiles, width_tiles),
             "num_global_tokens": global_tokens,
             "num_local_tokens": local_tokens,
         }
