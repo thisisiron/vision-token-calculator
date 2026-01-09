@@ -598,9 +598,15 @@ class DeepSeekOCRAnalyst(VLMAnalyst):
         total_tokens = self._calculate_native_tokens(num_queries)
         num_patches = (self.image_size // self.patch_size) ** 2
 
+        # Format: (<image>×N + <newline>) × N rows + <end>
+        token_format = (
+            f"({self.image_token}×{num_queries} + <newline>) "
+            f"× {num_queries} + <end> = {total_tokens}"
+        )
+
         return {
             "image_token": (self.image_token, total_tokens),
-            "image_token_format": f"{self.image_token}*{total_tokens}",
+            "image_token_format": token_format,
             "image_size": (height, width),
             "resized_size": (self.image_size, self.image_size),
             "number_of_image_patches": num_patches,
@@ -644,9 +650,17 @@ class DeepSeekOCRAnalyst(VLMAnalyst):
         )
         num_patches = global_patches + local_patches
 
+        # Format: global tokens + local tokens
+        if local_tokens > 0:
+            token_format = (
+                f"global({global_tokens}) + local({local_tokens}) = {total_tokens}"
+            )
+        else:
+            token_format = f"global({global_tokens}) = {total_tokens}"
+
         return {
             "image_token": (self.image_token, total_tokens),
-            "image_token_format": f"{self.image_token}*{total_tokens}",
+            "image_token_format": token_format,
             "image_size": (height, width),
             "resized_size": (self.base_size, self.base_size),
             "number_of_image_patches": num_patches,
