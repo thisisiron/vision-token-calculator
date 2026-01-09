@@ -563,14 +563,26 @@ class DeepSeekOCRAnalyst(VLMAnalyst):
         self.crop_mode = config["crop_mode"]
 
     def _calculate_num_queries(self, size: int) -> int:
+        """Calculate the number of visual queries after downsampling."""
         return math.ceil((size // self.patch_size) / self.downsample_ratio)
 
     def _calculate_native_tokens(self, num_queries: int) -> int:
+        """
+        Calculate tokens for native (non-crop) mode.
+
+        Token layout: (num_queries + 1 newline) * num_queries rows + 1 end token
+        Example (tiny, num_queries=8): (8 + 1) * 8 + 1 = 73 tokens
+        """
         return (num_queries + 1) * num_queries + 1
 
     def _calculate_local_tokens(
         self, num_queries: int, width_tiles: int, height_tiles: int
     ) -> int:
+        """
+        Calculate tokens for local crops in gundam mode.
+
+        Token layout: (queries_per_row + 1 newline) * total_rows
+        """
         return (num_queries * width_tiles + 1) * (num_queries * height_tiles)
 
     def calculate_image(self, image_size: Tuple[int, int]) -> dict:
