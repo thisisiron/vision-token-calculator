@@ -4,22 +4,31 @@ DeepSeek-OCR Vision Token Calculator Tests (TDD)
 Token Calculation Formula (from modeling_deepseekocr.py):
 - patch_size = 16
 - downsample_ratio = 4
-- num_queries = ceil((image_size // patch_size) / downsample_ratio)
+- num_row = ceil((image_size // patch_size) / downsample_ratio)
 
 Native Resolution Mode (crop_mode=False):
-    tokens = (num_queries + 1) * num_queries + 1
+    Token structure per row: <image> * num_row + <image_newline>
+    Total rows: num_row
+    End token: <image_seperator>
+
+    Formula: (num_row + 1) * num_row + 1
+             ^^^^^^^^       ^^^^^^^^   ^
+             row tokens     num rows   end token (<image_seperator>)
+             (images+newline)
 
 Gundam Mode (crop_mode=True, base_size=1024, image_size=640):
-    global_tokens = (num_queries_base + 1) * num_queries_base + 1
-    local_tokens = (num_queries * width_crop + 1) * (num_queries * height_crop)
-        (only if width_crop > 1 or height_crop > 1)
+    global_tokens = (num_row_base + 1) * num_row_base + 1
+    local_tokens = (num_row * width_tiles + 1) * (num_row * height_tiles)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^     ^^^^^^^^^^^^^^^^^^^^^^^^
+                   row tokens (images+newline)   total rows
+        (only if width_tiles > 1 or height_tiles > 1)
     total = global_tokens + local_tokens
 
 Expected token counts by mode:
-- tiny (512):  num_queries=8  -> (8+1)*8+1   = 73
-- small (640): num_queries=10 -> (10+1)*10+1 = 111
-- base (1024): num_queries=16 -> (16+1)*16+1 = 273
-- large (1280): num_queries=20 -> (20+1)*20+1 = 421
+- tiny (512):  num_row=8  -> (8+1)*8+1   = 73
+- small (640): num_row=10 -> (10+1)*10+1 = 111
+- base (1024): num_row=16 -> (16+1)*16+1 = 273
+- large (1280): num_row=20 -> (20+1)*20+1 = 421
 - gundam: base=273 + dynamic local crops
 """
 
@@ -35,7 +44,7 @@ class TestDeepSeekOCRNativeResolution:
     """
 
     def test_tiny_mode_returns_73_tokens(self):
-        """Tiny mode: 512x512 -> num_queries=8 -> (8+1)*8+1=73 tokens."""
+        """Tiny mode: 512x512 -> num_row=8 -> (8+1)*8+1=73 tokens."""
         from vt_calculator.analysts.analyst import DeepSeekOCRAnalyst
 
         analyst = DeepSeekOCRAnalyst(mode="tiny")
@@ -46,7 +55,7 @@ class TestDeepSeekOCRNativeResolution:
         assert result["base_size"] == 512
 
     def test_small_mode_returns_111_tokens(self):
-        """Small mode: 640x640 -> num_queries=10 -> (10+1)*10+1=111 tokens."""
+        """Small mode: 640x640 -> num_row=10 -> (10+1)*10+1=111 tokens."""
         from vt_calculator.analysts.analyst import DeepSeekOCRAnalyst
 
         analyst = DeepSeekOCRAnalyst(mode="small")
@@ -57,7 +66,7 @@ class TestDeepSeekOCRNativeResolution:
         assert result["base_size"] == 640
 
     def test_base_mode_returns_273_tokens(self):
-        """Base mode: 1024x1024 -> num_queries=16 -> (16+1)*16+1=273 tokens."""
+        """Base mode: 1024x1024 -> num_row=16 -> (16+1)*16+1=273 tokens."""
         from vt_calculator.analysts.analyst import DeepSeekOCRAnalyst
 
         analyst = DeepSeekOCRAnalyst(mode="base")
@@ -68,7 +77,7 @@ class TestDeepSeekOCRNativeResolution:
         assert result["base_size"] == 1024
 
     def test_large_mode_returns_421_tokens(self):
-        """Large mode: 1280x1280 -> num_queries=20 -> (20+1)*20+1=421 tokens."""
+        """Large mode: 1280x1280 -> num_row=20 -> (20+1)*20+1=421 tokens."""
         from vt_calculator.analysts.analyst import DeepSeekOCRAnalyst
 
         analyst = DeepSeekOCRAnalyst(mode="large")
@@ -472,12 +481,12 @@ class TestDeepSeekOCRTokenFormula:
         ],
     )
     def test_native_token_formula(self, image_size, expected_tokens):
-        """Verify: tokens = (num_queries + 1) * num_queries + 1."""
+        """Verify: tokens = (num_row + 1) * num_row + 1."""
         patch_size = 16
         downsample_ratio = 4
 
-        num_queries = math.ceil((image_size // patch_size) / downsample_ratio)
-        calculated_tokens = (num_queries + 1) * num_queries + 1
+        num_row = math.ceil((image_size // patch_size) / downsample_ratio)
+        calculated_tokens = (num_row + 1) * num_row + 1
 
         assert calculated_tokens == expected_tokens
 
@@ -494,8 +503,8 @@ class TestDeepSeekOCRTokenFormula:
         ],
     )
     def test_gundam_local_token_formula(self, width_tiles, height_tiles, expected_local):
-        """Verify: local_tokens = (num_queries * w + 1) * (num_queries * h)."""
-        num_queries = 10  # for image_size=640
+        """Verify: local_tokens = (num_row * w + 1) * (num_row * h)."""
+        num_row = 10  # for image_size=640
 
-        calculated_local = (num_queries * width_tiles + 1) * (num_queries * height_tiles)
+        calculated_local = (num_row * width_tiles + 1) * (num_row * height_tiles)
         assert calculated_local == expected_local

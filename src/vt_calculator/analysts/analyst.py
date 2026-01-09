@@ -562,28 +562,43 @@ class DeepSeekOCRAnalyst(VLMAnalyst):
         self.image_size = config["image_size"]
         self.crop_mode = config["crop_mode"]
 
-    def _calculate_num_queries(self, size: int) -> int:
-        """Calculate the number of visual queries after downsampling."""
+    def _calculate_num_row(self, size: int) -> int:
+        """
+        Calculate the grid dimension (visual tokens per row/column) after downsampling.
+
+        For an image of given size:
+        - Divide by patch_size to get number of patches per dimension
+        - Divide by downsample_ratio to get final grid dimension
+        """
         return math.ceil((size // self.patch_size) / self.downsample_ratio)
 
-    def _calculate_native_tokens(self, num_queries: int) -> int:
+    def _calculate_native_tokens(self, num_row: int) -> int:
         """
         Calculate tokens for native (non-crop) mode.
 
-        Token layout: (num_queries + 1 newline) * num_queries rows + 1 end token
-        Example (tiny, num_queries=8): (8 + 1) * 8 + 1 = 73 tokens
+        Token layout:
+        - Each row: num_row <image> tokens + 1 <image_newline>
+        - Total rows: num_row
+        - End: 1 <image_seperator>
+
+        Formula: (num_row + 1) * num_row + 1
+        Example (tiny, num_row=8): (8 + 1) * 8 + 1 = 73 tokens
         """
-        return (num_queries + 1) * num_queries + 1
+        return (num_row + 1) * num_row + 1
 
     def _calculate_local_tokens(
-        self, num_queries: int, width_tiles: int, height_tiles: int
+        self, num_row: int, width_tiles: int, height_tiles: int
     ) -> int:
         """
         Calculate tokens for local crops in gundam mode.
 
-        Token layout: (queries_per_row + 1 newline) * total_rows
+        Token layout:
+        - Each row: (num_row * width_tiles) <image> tokens + 1 <image_newline>
+        - Total rows: num_row * height_tiles
+
+        Formula: (num_row * width_tiles + 1) * (num_row * height_tiles)
         """
-        return (num_queries * width_tiles + 1) * (num_queries * height_tiles)
+        return (num_row * width_tiles + 1) * (num_row * height_tiles)
 
     def calculate_image(self, image_size: Tuple[int, int]) -> dict:
         height, width = image_size
@@ -594,14 +609,14 @@ class DeepSeekOCRAnalyst(VLMAnalyst):
             return self._calculate_native_mode(height, width)
 
     def _calculate_native_mode(self, height: int, width: int) -> dict:
-        num_queries = self._calculate_num_queries(self.image_size)
-        total_tokens = self._calculate_native_tokens(num_queries)
+        num_row = self._calculate_num_row(self.image_size)
+        total_tokens = self._calculate_native_tokens(num_row)
         num_patches = (self.image_size // self.patch_size) ** 2
 
-        # Format: (<image>*N + <image_newline>) * N rows + <image_seperator>
+        # Format: (<image>*N + <image_newline>) * N + <image_seperator>
         token_format = (
-            f"({self.image_token}*{num_queries} + <image_newline>) "
-            f"* {num_queries} + <image_seperator> = {total_tokens}"
+            f"({self.image_token}*{num_row} + <image_newline>) "
+            f"* {num_row} + <image_seperator> = {total_tokens}"
         )
 
         return {
@@ -614,14 +629,14 @@ class DeepSeekOCRAnalyst(VLMAnalyst):
             "mode": self.mode,
             "base_size": self.base_size,
             "patch_size": self.patch_size,
-            "num_queries": num_queries,
+            "num_row": num_row,
         }
 
     def _calculate_gundam_mode(self, height: int, width: int) -> dict:
-        num_queries_base = self._calculate_num_queries(self.base_size)
-        num_queries_local = self._calculate_num_queries(self.image_size)
+        num_row_base = self._calculate_num_row(self.base_size)
+        num_row_local = self._calculate_num_row(self.image_size)
 
-        global_tokens = self._calculate_native_tokens(num_queries_base)
+        global_tokens = self._calculate_native_tokens(num_row_base)
 
         # Determine crop grid: no crops for small images, otherwise use optimal tiling
         if width <= self.image_size and height <= self.image_size:
@@ -638,7 +653,7 @@ class DeepSeekOCRAnalyst(VLMAnalyst):
         local_tokens = 0
         if width_tiles > 1 or height_tiles > 1:
             local_tokens = self._calculate_local_tokens(
-                num_queries_local, width_tiles, height_tiles
+                num_row_local, width_tiles, height_tiles
             )
 
         total_tokens = global_tokens + local_tokens
@@ -651,13 +666,20 @@ class DeepSeekOCRAnalyst(VLMAnalyst):
         )
         num_patches = global_patches + local_patches
 
-        # Format: global tokens + local tokens
+        # Build token format string
         if local_tokens > 0:
+            local_cols = num_row_local * width_tiles
+            local_rows = num_row_local * height_tiles
             token_format = (
-                f"global({global_tokens}) + local({local_tokens}) = {total_tokens}"
+                f"global({global_tokens}) + "
+                f"local(({self.image_token}*{local_cols} + <image_newline>) "
+                f"* {local_rows} = {local_tokens}) = {total_tokens}"
             )
         else:
-            token_format = f"global({global_tokens}) = {total_tokens}"
+            token_format = (
+                f"({self.image_token}*{num_row_base} + <image_newline>) "
+                f"* {num_row_base} + <image_seperator> = {total_tokens}"
+            )
 
         return {
             "image_token": (self.image_token, total_tokens),
