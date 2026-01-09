@@ -598,10 +598,10 @@ class DeepSeekOCRAnalyst(VLMAnalyst):
         total_tokens = self._calculate_native_tokens(num_queries)
         num_patches = (self.image_size // self.patch_size) ** 2
 
-        # Format: (<image>×N + <image_newline>) × N rows + <image_seperator>
+        # Format: (<image>*N + <image_newline>) * N rows + <image_seperator>
         token_format = (
-            f"({self.image_token}×{num_queries} + <image_newline>) "
-            f"× {num_queries} + <image_seperator> = {total_tokens}"
+            f"({self.image_token}*{num_queries} + <image_newline>) "
+            f"* {num_queries} + <image_seperator> = {total_tokens}"
         )
 
         return {
@@ -618,20 +618,21 @@ class DeepSeekOCRAnalyst(VLMAnalyst):
         }
 
     def _calculate_gundam_mode(self, height: int, width: int) -> dict:
-        from .tools import count_tiles_deepseek
-
         num_queries_base = self._calculate_num_queries(self.base_size)
         num_queries_local = self._calculate_num_queries(self.image_size)
 
         global_tokens = self._calculate_native_tokens(num_queries_base)
 
-        crop_grid = count_tiles_deepseek(
-            orig_width=width,
-            orig_height=height,
-            min_num=self.MIN_CROPS,
-            max_num=self.MAX_CROPS,
-            image_size=self.image_size,
-        )
+        # Determine crop grid: no crops for small images, otherwise use optimal tiling
+        if width <= self.image_size and height <= self.image_size:
+            crop_grid = (1, 1)
+        else:
+            crop_grid = get_optimal_tiled_canvas(
+                original_image_size=(height, width),
+                target_tile_size=(self.image_size, self.image_size),
+                min_image_tiles=self.MIN_CROPS,
+                max_image_tiles=self.MAX_CROPS,
+            )
         width_tiles, height_tiles = crop_grid
 
         local_tokens = 0
