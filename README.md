@@ -187,6 +187,11 @@ Comparing models for dummy image (H×W): 1920×1080
 | LLaVA | llava |
 | LLaVA-NeXT | llava-next |
 | LLaVA-OneVision | llava-onevision |
+| DeepSeek-OCR (tiny) | deepseek-ocr-tiny |
+| DeepSeek-OCR (small) | deepseek-ocr-small |
+| DeepSeek-OCR (base) | deepseek-ocr-base |
+| DeepSeek-OCR (large) | deepseek-ocr-large |
+| DeepSeek-OCR (gundam) | deepseek-ocr-gundam |
 
 ## License
 
