@@ -580,11 +580,15 @@ class DeepSeekOCRAnalyst(VLMAnalyst):
     def _calculate_native_mode(self, height: int, width: int) -> dict:
         num_queries = self._calculate_num_queries(self.image_size)
         total_tokens = self._calculate_native_tokens(num_queries)
+        num_patches = (self.image_size // self.patch_size) ** 2
 
         return {
             "image_token": (self.image_token, total_tokens),
             "image_token_format": f"{self.image_token}*{total_tokens}",
             "image_size": (height, width),
+            "resized_size": (self.image_size, self.image_size),
+            "number_of_image_patches": num_patches,
+            "has_global_patch": False,
             "mode": self.mode,
             "base_size": self.base_size,
             "patch_size": self.patch_size,
@@ -616,10 +620,21 @@ class DeepSeekOCRAnalyst(VLMAnalyst):
 
         total_tokens = global_tokens + local_tokens
 
+        global_patches = (self.base_size // self.patch_size) ** 2
+        local_patches = (
+            width_tiles * height_tiles * (self.image_size // self.patch_size) ** 2
+            if width_tiles > 1 or height_tiles > 1
+            else 0
+        )
+        num_patches = global_patches + local_patches
+
         return {
             "image_token": (self.image_token, total_tokens),
             "image_token_format": f"{self.image_token}*{total_tokens}",
             "image_size": (height, width),
+            "resized_size": (self.base_size, self.base_size),
+            "number_of_image_patches": num_patches,
+            "has_global_patch": width_tiles > 1 or height_tiles > 1,
             "mode": self.mode,
             "base_size": self.base_size,
             "patch_size": self.patch_size,
