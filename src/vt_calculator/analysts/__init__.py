@@ -7,7 +7,9 @@ from .analyst import (
     LLaVANextAnalyst,
     LlavaOnevisionAnalyst,
     DeepSeekOCRAnalyst,
+    Phi4MultimodalAnalyst,
 )
+from typing import Optional
 from transformers import AutoProcessor, AutoConfig
 from typing import Callable, Dict, Optional, Tuple
 
@@ -25,6 +27,7 @@ MODEL_TO_HF_ID: dict[str, Optional[str]] = {
     "deepseek-ocr-base": None,
     "deepseek-ocr-large": None,
     "deepseek-ocr-gundam": None,
+    "phi4-multimodal": None,
 }
 
 SUPPORTED_MODELS: set[str] = set(MODEL_TO_HF_ID.keys())
@@ -60,6 +63,7 @@ def load_analyst(model_name: str = DEFAULT_MODEL):
         "deepseek-ocr-base": (lambda proc, cfg: DeepSeekOCRAnalyst(mode="base"), False),
         "deepseek-ocr-large": (lambda proc, cfg: DeepSeekOCRAnalyst(mode="large"), False),
         "deepseek-ocr-gundam": (lambda proc, cfg: DeepSeekOCRAnalyst(mode="gundam"), False),
+        "phi4-multimodal": (lambda proc, cfg: Phi4MultimodalAnalyst(), False),
     }
 
     if key not in ANALYST_REGISTRY:
@@ -86,6 +90,7 @@ __all__ = [
     "LLaVANextAnalyst",
     "LlavaOnevisionAnalyst",
     "DeepSeekOCRAnalyst",
+    "Phi4MultimodalAnalyst",
     "load_analyst",
     "map_model_id",
     "SUPPORTED_MODELS",
