@@ -127,11 +127,11 @@ class TestDeepSeekOCRGundamMode:
         # Only global tokens (no local crops)
         assert result_exact["image_token"][1] == 273
         assert result_small["image_token"][1] == 273
-        assert result_exact.get("crop_grid") == (1, 1)
+        assert result_exact.get("tile_grid") == (1, 1)
         assert result_exact.get("num_local_tokens", 0) == 0
 
     def test_gundam_wide_image_4x2_crops(self):
-        """Wide image (1920x1080, aspect~1.78) -> (4,2) tiles.
+        """Wide image (1920x1080, aspect~1.78) -> (2,4) tiles (H×W).
 
         Aspect ratio 1.78 is equidistant from (2,1)=2.0 and (4,2)=2.0.
         Tie-breaker favors more tiles when area justifies it.
@@ -148,11 +148,11 @@ class TestDeepSeekOCRGundamMode:
         expected_local = (10 * 4 + 1) * (10 * 2)  # 820
         expected_total = 273 + expected_local  # 1093
 
-        assert result["crop_grid"] == (4, 2)  # (width_tiles, height_tiles)
+        assert result["tile_grid"] == (2, 4)  # (height_tiles, width_tiles) = (H×W)
         assert result["image_token"][1] == expected_total
 
     def test_gundam_tall_image_2x4_crops(self):
-        """Tall image (1080x1920, aspect~0.56) -> (2,4) tiles.
+        """Tall image (1080x1920, aspect~0.56) -> (4,2) tiles (H×W).
 
         Aspect ratio 0.56 is equidistant from (1,2)=0.5 and (2,4)=0.5.
         Tie-breaker favors more tiles when area justifies it.
@@ -169,7 +169,7 @@ class TestDeepSeekOCRGundamMode:
         expected_local = (10 * 2 + 1) * (10 * 4)  # 840
         expected_total = 273 + expected_local  # 1113
 
-        assert result["crop_grid"] == (2, 4)  # (width_tiles, height_tiles)
+        assert result["tile_grid"] == (4, 2)  # (height_tiles, width_tiles) = (H×W)
         assert result["image_token"][1] == expected_total
 
     def test_gundam_square_large_image_2x2_crops(self):
@@ -187,11 +187,11 @@ class TestDeepSeekOCRGundamMode:
         expected_local = (10 * 2 + 1) * (10 * 2)  # 420
         expected_total = 273 + expected_local  # 693
 
-        assert result["crop_grid"] == (2, 2)
+        assert result["tile_grid"] == (2, 2)
         assert result["image_token"][1] == expected_total
 
     def test_gundam_very_wide_image_4x1_crops(self):
-        """Very wide image (2560x720, aspect~3.56) -> (4,1) tiles.
+        """Very wide image (2560x720, aspect~3.56) -> (1,4) tiles (H×W).
 
         Aspect ratio 3.56 is closer to (4,1)=4.0 than (3,1)=3.0.
         diff(3.56, 4.0) = 0.44 < diff(3.56, 3.0) = 0.56
@@ -208,7 +208,7 @@ class TestDeepSeekOCRGundamMode:
         expected_local = (10 * 4 + 1) * (10 * 1)  # 410
         expected_total = 273 + expected_local  # 683
 
-        assert result["crop_grid"] == (4, 1)
+        assert result["tile_grid"] == (1, 4)  # (height_tiles, width_tiles) = (H×W)
         assert result["image_token"][1] == expected_total
 
 
@@ -285,12 +285,17 @@ class TestDeepSeekOCROutputFormat:
         result = analyst.calculate_image((1024, 1024))
 
         required_keys = [
+            "processing_method",
             "image_token",
             "image_token_format",
             "image_size",
+            "resized_size",
+            "patch_size",
+            "patch_grid",
+            "total_patches",
+            "has_global_patch",
             "mode",
             "base_size",
-            "patch_size",
         ]
         for key in required_keys:
             assert key in result, f"Missing required key: {key}"
@@ -315,10 +320,12 @@ class TestDeepSeekOCROutputFormat:
         analyst = DeepSeekOCRAnalyst(mode="gundam")
         result = analyst.calculate_image((1920, 1080))
 
-        assert "crop_grid" in result
+        assert result["processing_method"] == "tile_based"
+        assert "tile_grid" in result
+        assert "number_of_tiles" in result
         assert "num_global_tokens" in result
         assert "num_local_tokens" in result
-        assert isinstance(result["crop_grid"], tuple)
+        assert isinstance(result["tile_grid"], tuple)
 
 
 class TestDeepSeekOCRVideo:
@@ -407,7 +414,7 @@ class TestDeepSeekOCREdgeCases:
 
         # Small images get no crops, only global view
         assert result["image_token"][1] == 273
-        assert result["crop_grid"] == (1, 1)
+        assert result["tile_grid"] == (1, 1)
 
     def test_very_large_image_respects_max_crops(self):
         """Very large images should respect max_crops=9 limit."""
@@ -417,8 +424,8 @@ class TestDeepSeekOCREdgeCases:
         result = analyst.calculate_image((5000, 5000))
 
         # Should be limited to 3x3 = 9 crops max
-        width_tiles, height_tiles = result["crop_grid"]
-        assert width_tiles * height_tiles <= 9
+        height_tiles, width_tiles = result["tile_grid"]  # (H×W)
+        assert height_tiles * width_tiles <= 9
 
     def test_extreme_aspect_ratio_wide(self):
         """Extremely wide images should work."""
@@ -428,7 +435,7 @@ class TestDeepSeekOCREdgeCases:
         result = analyst.calculate_image((480, 6000))  # very wide
 
         assert result["image_token"][1] > 273  # has crops
-        width_tiles, height_tiles = result["crop_grid"]
+        height_tiles, width_tiles = result["tile_grid"]  # (H×W)
         assert width_tiles > height_tiles
 
     def test_extreme_aspect_ratio_tall(self):
@@ -439,7 +446,7 @@ class TestDeepSeekOCREdgeCases:
         result = analyst.calculate_image((6000, 480))  # very tall
 
         assert result["image_token"][1] > 273  # has crops
-        width_tiles, height_tiles = result["crop_grid"]
+        height_tiles, width_tiles = result["tile_grid"]  # (H×W)
         assert height_tiles > width_tiles
 
 

@@ -239,6 +239,17 @@ class Reporter:
         model_table.add_column("Key", style="cyan", ratio=1)
         model_table.add_column("Value", style="bold white", ratio=2)
         model_table.add_row("Model Name", model_name)
+
+        # Add Processing Method
+        processing_method = result.get("processing_method", "")
+        if processing_method:
+            method_display = {
+                "native_resolution": "Native Resolution",
+                "tile_based": "Tile-based",
+                "fixed_resolution": "Fixed Resolution",
+            }.get(processing_method, processing_method)
+            model_table.add_row("Processing Method", method_display)
+
         grid.add_row(
             Panel(
                 model_table,
@@ -282,6 +293,31 @@ class Reporter:
             )
         )
 
+        # TILE INFO (for tile-based models)
+        if not is_video and processing_method == "tile_based":
+            tile_table = Table(box=box.SIMPLE, show_header=False, expand=True)
+            tile_table.add_column("Key", style="cyan", ratio=1)
+            tile_table.add_column("Value", style="bold white", ratio=2)
+
+            tile_table.add_row("Tile Size", str(result.get("tile_size", "N/A")))
+            if "tile_grid" in result:
+                tile_table.add_row(
+                    "Tile Grid (H×W)",
+                    f"{result['tile_grid'][0]}×{result['tile_grid'][1]}",
+                )
+            num_tiles = result.get("number_of_tiles", "N/A")
+            global_note = " (incl. global)" if result.get("has_global_patch") else ""
+            tile_table.add_row("Number of Tiles", f"{num_tiles}{global_note}")
+
+            grid.add_row(
+                Panel(
+                    tile_table,
+                    title="[bold]TILE INFO[/bold]",
+                    border_style="yellow",
+                    box=box.ROUNDED,
+                )
+            )
+
         # PATCH INFO
         patch_table = Table(box=box.SIMPLE, show_header=False, expand=True)
         patch_table.add_column("Key", style="cyan", ratio=1)
@@ -293,20 +329,36 @@ class Reporter:
                     "Grid Size (per frame)",
                     f"{result['grid_size'][0]} x {result['grid_size'][1]}",
                 )
-        else:
+        elif processing_method == "tile_based":
+            # Tile-based: show patch info within tiles
             patch_table.add_row(
                 "Patch Size (ViT)", str(result.get("patch_size", "N/A"))
             )
-            if "tile_size" in result:
-                patch_table.add_row("Tile Size", str(result["tile_size"]))
-            if "grid_size" in result:
+            patches_per_tile = result.get("patches_per_tile", "N/A")
+            if patches_per_tile != "N/A":
+                tile_size = result.get("tile_size", 0)
+                patch_size = result.get("patch_size", 1)
+                if tile_size and patch_size:
+                    patches_dim = tile_size // patch_size
+                    patch_table.add_row(
+                        "Patches per Tile",
+                        f"{patches_per_tile} ({patches_dim}×{patches_dim})",
+                    )
+            patch_table.add_row(
+                "Total Patches", str(result.get("total_patches", "N/A"))
+            )
+        else:
+            # Native resolution / Fixed resolution
+            patch_table.add_row(
+                "Patch Size (ViT)", str(result.get("patch_size", "N/A"))
+            )
+            if "patch_grid" in result:
                 patch_table.add_row(
-                    "Grid Size (H×W)",
-                    f"{result['grid_size'][0]}×{result['grid_size'][1]}",
+                    "Patch Grid (H×W)",
+                    f"{result['patch_grid'][0]}×{result['patch_grid'][1]}",
                 )
             patch_table.add_row(
-                "Number of Patches",
-                f"{result['number_of_image_patches']} {'(global patch)' if result.get('has_global_patch') else ''}",
+                "Total Patches", str(result.get("total_patches", result.get("number_of_image_patches", "N/A")))
             )
 
         grid.add_row(

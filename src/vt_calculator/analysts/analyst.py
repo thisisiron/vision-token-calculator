@@ -74,8 +74,13 @@ class LLaVAAnalyst(VLMAnalyst):
             num_tokens -= 1  # CLS token is excluded in the default strategy
 
         return {
+            "processing_method": "fixed_resolution",
             "number_of_image_patches": num_tokens,
             "patch_size": self.patch_size,
+            "patch_grid": (
+                self.resized_height // self.patch_size,
+                self.resized_width // self.patch_size,
+            ),
             "has_global_patch": False,
             "image_size": image_size,
             "resized_size": (self.resized_height, self.resized_width),
@@ -149,12 +154,18 @@ class LLaVANextAnalyst(VLMAnalyst):
         if self.vision_feature_select_strategy == "default":
             num_image_tokens -= 1  # CLS token is excluded in the default strategy
 
+        patches_per_tile = patches_height * patches_width
+        total_patches = num_patches * patches_per_tile
+
         return {
-            "number_of_image_patches": num_patches,
-            "patch_size": self.patch_size,
+            "processing_method": "tile_based",
             "tile_size": self.tile_size[0],
-            "grid_size": (scale_height, scale_width),
+            "tile_grid": (scale_height, scale_width),
+            "number_of_tiles": num_patches,
             "has_global_patch": True,
+            "patch_size": self.patch_size,
+            "patches_per_tile": patches_per_tile,
+            "total_patches": total_patches,
             "image_size": image_size,
             "resized_size": (resized_height, resized_width),
             "image_token": (self.image_token, num_image_tokens),
@@ -261,12 +272,18 @@ class LlavaOnevisionAnalyst(VLMAnalyst):
         if self.vision_feature_select_strategy == "default":
             num_image_tokens -= 1
 
+        patches_per_tile = patches_height * patches_width
+        total_patches = num_patches * patches_per_tile
+
         return {
-            "number_of_image_patches": num_patches,
-            "patch_size": self.patch_size,
+            "processing_method": "tile_based",
             "tile_size": self.tile_size[0],
-            "grid_size": (scale_height, scale_width),
+            "tile_grid": (scale_height, scale_width),
+            "number_of_tiles": num_patches,
             "has_global_patch": True,
+            "patch_size": self.patch_size,
+            "patches_per_tile": patches_per_tile,
+            "total_patches": total_patches,
             "image_size": image_size,
             "resized_size": (resized_height, resized_width),
             "image_token": (self.image_token, num_image_tokens),
@@ -309,9 +326,10 @@ class Qwen2VLAnalyst(VLMAnalyst):
         num_tokens = num_patches // (self.merge_size**2)
 
         return {
-            "number_of_image_patches": num_patches,
-            "grid_size": (grid_h, grid_w),
+            "processing_method": "native_resolution",
             "patch_size": self.patch_size,
+            "patch_grid": (grid_h, grid_w),
+            "total_patches": num_patches,
             "has_global_patch": False,
             "image_size": image_size,
             "resized_size": (resized_h, resized_w),
@@ -478,13 +496,18 @@ class InternVLAnalyst(VLMAnalyst):
             num_patches += grid_h * grid_w
 
         num_tokens = num_patches * self.image_seq_length
+        patches_per_tile = self.image_seq_length
+        total_patches = num_patches * patches_per_tile
 
         return {
-            "number_of_image_patches": num_patches,
-            "grid_size": (grid_h, grid_w),
+            "processing_method": "tile_based",
             "tile_size": self.tile_size,
-            "patch_size": self.patch_size,
+            "tile_grid": (grid_h, grid_w),
+            "number_of_tiles": num_patches,
             "has_global_patch": num_patches > 1,
+            "patch_size": self.patch_size,
+            "patches_per_tile": patches_per_tile,
+            "total_patches": total_patches,
             "image_size": image_size,
             "resized_size": (self.tile_size * grid_h, self.tile_size * grid_w),
             "image_token": (self.image_token, num_tokens),
@@ -619,16 +642,20 @@ class DeepSeekOCRAnalyst(VLMAnalyst):
             f"* {num_row} + <image_seperator> = {total_tokens}"
         )
 
+        patch_grid = self.image_size // self.patch_size
+
         return {
+            "processing_method": "native_resolution",
             "image_token": (self.image_token, total_tokens),
             "image_token_format": token_format,
             "image_size": (height, width),
             "resized_size": (self.image_size, self.image_size),
-            "number_of_image_patches": num_patches,
+            "patch_size": self.patch_size,
+            "patch_grid": (patch_grid, patch_grid),
+            "total_patches": num_patches,
             "has_global_patch": False,
             "mode": self.mode,
             "base_size": self.base_size,
-            "patch_size": self.patch_size,
             "num_row": num_row,
         }
 
@@ -681,18 +708,26 @@ class DeepSeekOCRAnalyst(VLMAnalyst):
                 f"* {num_row_base} + <image_seperator> = {total_tokens}"
             )
 
+        has_local_crops = width_tiles > 1 or height_tiles > 1
+        global_patches_per_tile = (self.base_size // self.patch_size) ** 2
+        local_patches_per_tile = (self.image_size // self.patch_size) ** 2 if has_local_crops else 0
+        number_of_tiles = 1 + (width_tiles * height_tiles if has_local_crops else 0)
+
         return {
+            "processing_method": "tile_based",
             "image_token": (self.image_token, total_tokens),
             "image_token_format": token_format,
             "image_size": (height, width),
             "resized_size": (self.base_size, self.base_size),
-            "number_of_image_patches": num_patches,
-            "has_global_patch": width_tiles > 1 or height_tiles > 1,
+            "tile_size": self.image_size,
+            "tile_grid": (height_tiles, width_tiles),
+            "number_of_tiles": number_of_tiles,
+            "has_global_patch": has_local_crops,
+            "patch_size": self.patch_size,
+            "patches_per_tile": local_patches_per_tile if has_local_crops else global_patches_per_tile,
+            "total_patches": num_patches,
             "mode": self.mode,
             "base_size": self.base_size,
-            "patch_size": self.patch_size,
-            "crop_grid": crop_grid,
-            "grid_size": (height_tiles, width_tiles),
             "num_global_tokens": global_tokens,
             "num_local_tokens": local_tokens,
         }
