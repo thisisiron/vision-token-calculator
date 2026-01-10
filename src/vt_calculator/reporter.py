@@ -398,6 +398,22 @@ class Reporter:
         if items_to_show:
             for display_name, token_count in items_to_show:
                 token_info_table.add_row(display_name, str(token_count))
+
+            # Calculate Pixels per Token
+            resized_h, resized_w = result.get("resized_size", (0, 0))
+            if is_video:
+                total_pixels = resized_h * resized_w * result.get("sampled_frames", 1)
+                total_tokens = result.get("number_of_video_tokens", 0)
+            else:
+                total_pixels = resized_h * resized_w
+                total_tokens = result.get("image_token", (None, 0))[1]
+
+            if total_tokens and total_tokens > 0:
+                pixels_per_token = round(total_pixels / total_tokens)
+                token_info_table.add_row(
+                    "Pixels per Token", f"{pixels_per_token:,} px/token"
+                )
+
             grid.add_row(
                 Panel(
                     token_info_table,
