@@ -53,3 +53,6 @@ db.sqlite3
 
 # Ruff
 .ruff_cache/
+
+# Claude Code plans
+docs/plans/
