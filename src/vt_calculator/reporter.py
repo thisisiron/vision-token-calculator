@@ -57,7 +57,8 @@ def display_comparison_results(comparison: dict, source: str):
     table.add_column("Rank", style="dim", width=6, justify="center")
     table.add_column("Model", style="bold", min_width=15)
     table.add_column("Tokens", justify="right", min_width=10)
-    table.add_column("Efficiency", min_width=20)
+    table.add_column("px/token", justify="right", min_width=10)
+    table.add_column("Efficiency", min_width=16)
     table.add_column("Status", justify="center", width=8)
 
     sorted_results = sorted(
@@ -72,10 +73,11 @@ def display_comparison_results(comparison: dict, source: str):
         model = result["model"]
         tokens = result["tokens"]
         error = result["error"]
+        details = result.get("details", {})
 
         if error:
             table.add_row(
-                "-", model, "[red]N/A[/red]", f"[dim]{error[:20]}[/dim]", "[red]✗[/red]"
+                "-", model, "[red]N/A[/red]", "[red]N/A[/red]", f"[dim]{error[:20]}[/dim]", "[red]✗[/red]"
             )
         else:
             rank += 1
@@ -83,28 +85,43 @@ def display_comparison_results(comparison: dict, source: str):
             bar_filled = int(efficiency * 10)
             bar = "█" * bar_filled + "░" * (10 - bar_filled)
 
+            # Calculate px/token using each model's resized_size
+            if is_video:
+                resized = details.get("resized_size", (0, 0))
+                sampled_frames = details.get("sampled_frames", 1)
+                total_pixels = resized[0] * resized[1] * sampled_frames
+            else:
+                resized = details.get("resized_size", comparison["image_size"])
+                total_pixels = resized[0] * resized[1]
+            px_per_token = total_pixels / tokens if tokens > 0 else 0
+
             if rank == 1:
                 rank_str = "[green]🥇 1[/green]"
                 tokens_str = f"[green bold]{tokens:,}[/green bold]"
+                px_str = f"[green]{px_per_token:.1f}[/green]"
                 bar_str = f"[green]{bar}[/green] Best"
             elif rank == 2 and len(valid_tokens) > 2:
                 rank_str = "[yellow]🥈 2[/yellow]"
                 tokens_str = f"[yellow]{tokens:,}[/yellow]"
+                px_str = f"[yellow]{px_per_token:.1f}[/yellow]"
                 bar_str = f"[yellow]{bar}[/yellow]"
             elif rank == 3:
                 rank_str = "[#cd7f32]🥉 3[/#cd7f32]"
                 tokens_str = f"[#cd7f32]{tokens:,}[/#cd7f32]"
+                px_str = f"[#cd7f32]{px_per_token:.1f}[/#cd7f32]"
                 bar_str = f"[#cd7f32]{bar}[/#cd7f32]"
             elif rank == len(valid_tokens):
                 rank_str = f"[red]{rank}[/red]"
                 tokens_str = f"[red]{tokens:,}[/red]"
+                px_str = f"[red]{px_per_token:.1f}[/red]"
                 bar_str = f"[red]{bar}[/red]"
             else:
                 rank_str = str(rank)
                 tokens_str = f"{tokens:,}"
+                px_str = f"{px_per_token:.1f}"
                 bar_str = bar
 
-            table.add_row(rank_str, model, tokens_str, bar_str, "[green]✓[/green]")
+            table.add_row(rank_str, model, tokens_str, px_str, bar_str, "[green]✓[/green]")
 
     console.print(table)
 
@@ -409,9 +426,9 @@ class Reporter:
                 total_tokens = result.get("image_token", (None, 0))[1]
 
             if total_tokens and total_tokens > 0:
-                pixels_per_token = round(total_pixels / total_tokens)
+                pixels_per_token = total_pixels / total_tokens
                 token_info_table.add_row(
-                    "Pixels per Token", f"{pixels_per_token:,} px/token"
+                    "Pixels per Token", f"{pixels_per_token:.1f} px/token"
                 )
 
             grid.add_row(
