@@ -163,32 +163,20 @@ Comparing models for dummy image (H×W): 1920×1080
 
 ## Supported Models
 
-### Qwen Series
-
-| Model | Option |
-|-------|--------|
-| Qwen2-VL | `qwen2-vl` |
-| Qwen2.5-VL | `qwen2.5-vl` |
-| Qwen3-VL | `qwen3-vl` |
-
-### LLaVA Series
-
-| Model | Option |
-|-------|--------|
-| LLaVA | `llava` |
-| LLaVA-NeXT | `llava-next` |
-| LLaVA-OneVision | `llava-onevision` |
-
-### Other Models
-
-| Model | Option |
-|-------|--------|
-| InternVL3 | `internvl3` |
-| DeepSeek-OCR (tiny) | `deepseek-ocr-tiny` |
-| DeepSeek-OCR (small) | `deepseek-ocr-small` |
-| DeepSeek-OCR (base) | `deepseek-ocr-base` |
-| DeepSeek-OCR (large) | `deepseek-ocr-large` |
-| DeepSeek-OCR (gundam) | `deepseek-ocr-gundam` |
+| Model | Option | Image | Video |
+|-------|--------|:-----:|:-----:|
+| Qwen2-VL | `qwen2-vl` | ✓ | ✓ |
+| Qwen2.5-VL | `qwen2.5-vl` | ✓ | ✓ |
+| Qwen3-VL | `qwen3-vl` | ✓ | ✓ |
+| LLaVA | `llava` | ✓ | ✓ |
+| LLaVA-NeXT | `llava-next` | ✓ | |
+| LLaVA-OneVision | `llava-onevision` | ✓ | ✓ |
+| InternVL3 | `internvl3` | ✓ | ✓ |
+| DeepSeek-OCR (tiny) | `deepseek-ocr-tiny` | ✓ | |
+| DeepSeek-OCR (small) | `deepseek-ocr-small` | ✓ | |
+| DeepSeek-OCR (base) | `deepseek-ocr-base` | ✓ | |
+| DeepSeek-OCR (large) | `deepseek-ocr-large` | ✓ | |
+| DeepSeek-OCR (gundam) | `deepseek-ocr-gundam` | ✓ | |
 
 ## License
 
