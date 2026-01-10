@@ -1,6 +1,19 @@
 # Vision Token Calculator
 
+[![PyPI version](https://badge.fury.io/py/vt-calc.svg)](https://badge.fury.io/py/vt-calc)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+
 A Python tool for calculating the number of tokens generated when processing images with Vision Language Models (VLMs).
+
+## Quick Start
+
+```bash
+pip install vt-calc
+vt-calc --size 1920 1080                    # Calculate tokens for 1920x1080 image
+vt-calc --image photo.jpg -m qwen2.5-vl     # Calculate tokens for an image
+vt-calc --compare all --size 1920 1080      # Compare all models
+```
 
 ## Features
 
@@ -26,9 +39,7 @@ pip install -e .
 
 ## Usage
 
-Using the vt-calc command (after pip install -e .)
-
-After installing with `pip install -e .`, you can use the `vt-calc` command directly:
+### Basic Commands
 
 ```bash
 # Single image
@@ -40,12 +51,16 @@ vt-calc --image https://example.com/image.jpg
 # Directory (batch processing)
 vt-calc --image path/to/your/images_dir
 
-# Dummy image with specific dimensions (Width x Height)
+# Dummy image with specific dimensions (Height x Width)
 vt-calc --size 1920 1080
 
-# Choose a short model name (default: qwen2.5-vl)
-vt-calc --image path/to/your/image.jpg -m qwen2.5-vl
+# Choose a model (default: qwen2.5-vl)
+vt-calc --image photo.jpg -m internvl3
+```
 
+### Video Processing
+
+```bash
 # Calculate tokens for a video file
 vt-calc --video path/to/video.mp4 -m qwen2.5-vl
 
@@ -54,8 +69,12 @@ vt-calc --video video.mp4 --fps 2.0
 
 # Limit maximum number of frames
 vt-calc --video video.mp4 --max-frames 100
+```
 
-# Compare multiple models (comma-separated)
+### Model Comparison
+
+```bash
+# Compare specific models (comma-separated)
 vt-calc --image photo.jpg --compare qwen2.5-vl,internvl3,llava
 
 # Compare all supported models
@@ -63,25 +82,27 @@ vt-calc --size 1920 1080 --compare all
 
 # Compare models for video
 vt-calc --video video.mp4 --compare qwen2.5-vl,llava-next --fps 2.0
-
-# Show help
-vt-calc --help
 ```
 
-### CLI options
+### CLI Options
 
-- `-i, --image`: Path to an image file, a directory of images, or an image URL
-- `-v, --video`: Path to a video file
-- `-s, --size HEIGHT WIDTH`: Create a dummy image of the given size
-- `-m, --model-name`: Short model name to use (default: `qwen2.5-vl`)
-- `-c, --compare`: Compare multiple models (comma-separated list or `all`)
-- `--fps`: Frames per second for video sampling
-- `--max-frames`: Maximum number of frames to extract from video
-- `--duration`: Duration in seconds (for dummy video calculation)
+| Option | Short | Description | Default |
+|--------|-------|-------------|---------|
+| `--image` | `-i` | Path to image file, directory, or URL | - |
+| `--video` | `-v` | Path to video file | - |
+| `--size` | `-s` | Create dummy image (HEIGHT WIDTH) | - |
+| `--model-name` | `-m` | Model name to use | `qwen2.5-vl` |
+| `--compare` | `-c` | Compare models (comma-separated or `all`) | - |
+| `--fps` | - | Frames per second for video sampling | - |
+| `--max-frames` | - | Maximum frames to extract from video | - |
+| `--duration` | - | Duration in seconds (dummy video) | - |
 
-Supported input formats for directory processing: `.jpg`, `.jpeg`, `.png`, `.webp` (case-insensitive).
+Supported input formats: `.jpg`, `.jpeg`, `.png`, `.webp` (case-insensitive)
 
-### Example output (single image)
+### Example Output
+
+<details>
+<summary>Single Image Analysis</summary>
 
 ```text
 Using dummy image (H×W): 1024×768
@@ -89,74 +110,24 @@ Using dummy image (H×W): 1024×768
                         ║ VISION TOKEN ANALYSIS REPORT ║
                         ╚══════════════════════════════╝
 ╭───────────────────────────────── MODEL INFO ─────────────────────────────────╮
-│                                                                              │
 │   Model Name                qwen2.5-vl                                       │
-│                                                                              │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ╭───────────────────────────────── IMAGE INFO ─────────────────────────────────╮
-│                                                                              │
-│   Image Source              Dummy image (H×W): 1024×768                      │
 │   Original Size (H×W)       1024×768                                         │
 │   Resized Size (H×W)        1036×756                                         │
-│                                                                              │
-╰──────────────────────────────────────────────────────────────────────────────╯
-╭───────────────────────────────── PATCH INFO ─────────────────────────────────╮
-│                                                                              │
-│   Patch Size (ViT)          14                                               │
-│   Grid Size (H×W)           74×54                                            │
-│   Number of Patches         3996                                             │
-│                                                                              │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ╭───────────────────────────────── TOKEN INFO ─────────────────────────────────╮
-│                                                                              │
 │   Image Token               999                                              │
-│   (<|image_pad|>)                                                            │
-│   Image Start Token         1                                                │
-│   (<|vision_start|>)                                                         │
-│   Image End Token           1                                                │
-│   (<|vision_end|>)                                                           │
-│                                                                              │
-╰──────────────────────────────────────────────────────────────────────────────╯
-╭──────────────────────────────── TOKEN FORMAT ────────────────────────────────╮
-│               <|vision_start|><|image_pad|>*999<|vision_end|>                │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ```
 
-### Example output (multi image)
+</details>
 
-```text
-Processing directory: test_images/
-Found 8 images to process...
-
-[1/8] Processing: test_1_640x480.jpg ✓ (393 tokens)
-[2/8] Processing: test_2_800x600.jpg ✓ (611 tokens)
-[3/8] Processing: test_3_1024x768.jpg ✓ (1001 tokens)
-[4/8] Processing: test_4_1280x720.jpg ✓ (1198 tokens)
-[5/8] Processing: test_5_1920x1080.jpg ✓ (2693 tokens)
-[6/8] Processing: test_6_512x512.jpg ✓ (326 tokens)
-[7/8] Processing: test_7_256x256.jpg ✓ (83 tokens)
-[8/8] Processing: test_8_2048x1536.jpg ✓ (4017 tokens)
-
-       BATCH ANALYSIS REPORT
-╭────────────────────────┬────────────╮
-│ Model                  │ qwen2.5-vl │
-│ Total Images Processed │ 8          │
-│ Average Vision Tokens  │ 1290.2     │
-│ Minimum Vision Tokens  │ 83         │
-│ Maximum Vision Tokens  │ 4017       │
-│ Standard Deviation     │ 1370.5     │
-╰────────────────────────┴────────────╯
-```
-
-### Example output (model comparison)
+<details>
+<summary>Model Comparison</summary>
 
 ```text
 Comparing models for dummy image (H×W): 1920×1080
-                        ╔══════════════════════════════╗
-                        ║    IMAGE MODEL COMPARISON    ║
-                        ╚══════════════════════════════╝
-                      Dummy image (H×W): 1920×1080
-                      Resolution (H×W): 1920×1080
 
                          Token Comparison
 ╭────────┬─────────────────┬────────────┬──────────────────────┬──────────╮
@@ -176,22 +147,36 @@ Comparing models for dummy image (H×W): 1920×1080
 ╰───────────────────────────────────────────────────────────────╯
 ```
 
+</details>
+
 ## Supported Models
+
+### Qwen Series
 
 | Model | Option |
 |-------|--------|
-| Qwen2-VL | qwen2-vl |
-| Qwen2.5-VL | qwen2.5-vl |
-| Qwen3-VL | qwen3-vl |
-| InternVL3 | internvl3 |
-| LLaVA | llava |
-| LLaVA-NeXT | llava-next |
-| LLaVA-OneVision | llava-onevision |
-| DeepSeek-OCR (tiny) | deepseek-ocr-tiny |
-| DeepSeek-OCR (small) | deepseek-ocr-small |
-| DeepSeek-OCR (base) | deepseek-ocr-base |
-| DeepSeek-OCR (large) | deepseek-ocr-large |
-| DeepSeek-OCR (gundam) | deepseek-ocr-gundam |
+| Qwen2-VL | `qwen2-vl` |
+| Qwen2.5-VL | `qwen2.5-vl` |
+| Qwen3-VL | `qwen3-vl` |
+
+### LLaVA Series
+
+| Model | Option |
+|-------|--------|
+| LLaVA | `llava` |
+| LLaVA-NeXT | `llava-next` |
+| LLaVA-OneVision | `llava-onevision` |
+
+### Other Models
+
+| Model | Option |
+|-------|--------|
+| InternVL3 | `internvl3` |
+| DeepSeek-OCR (tiny) | `deepseek-ocr-tiny` |
+| DeepSeek-OCR (small) | `deepseek-ocr-small` |
+| DeepSeek-OCR (base) | `deepseek-ocr-base` |
+| DeepSeek-OCR (large) | `deepseek-ocr-large` |
+| DeepSeek-OCR (gundam) | `deepseek-ocr-gundam` |
 
 ## License
 
