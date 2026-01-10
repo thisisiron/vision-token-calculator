@@ -72,6 +72,7 @@ Most implementations include a **global thumbnail** (the full image resized to t
 - **LLaVA-NeXT**: AnyRes with predefined grid configurations {2×2, 1×{2,3,4}, {2,3,4}×1}
 - **LLaVA-OneVision**: Extended AnyRes supporting up to 6×6 grids
 - **InternVL2 / InternVL2.5**: Dynamic tile allocation with configurable n_max parameter
+- **Phi-4-Multimodal**: Dynamic HD cropping with global view + HD patches
 
 ### Algorithm
 
@@ -151,6 +152,28 @@ $$
 Where:
 - $N_{patches}$: Number of tiles (1 for small images, grid_h × grid_w + 1 for larger)
 - Typical values: tile_size=448, patch_size=14, pixel_unshuffle=2
+
+**Phi-4-Multimodal:**
+
+For small images (≤ 448×448), only global view is used:
+
+$$
+N_{tokens} = 256 + 1 + 16 = 273
+$$
+
+For larger images with HD crops:
+
+$$
+N_{tokens} = 273 + 256 \times G_h \times G_w + 16 \times G_h
+$$
+
+Where:
+- 256: Global image tokens (16×16 grid from 448/14/2)
+- 1: Separator token
+- $256 \times G_h \times G_w$: HD patch tokens
+- $16 \times G_h$: Row-level tokens
+- 16: Fixed overhead
+- Typical values: image_size=448, patch_size=14, downsample_ratio=2, max_crops=36
 
 ---
 

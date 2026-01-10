@@ -150,12 +150,13 @@ Comparing models for dummy image (H×W): 1920×1080
 │   9    │ qwen2-vl            │      2,693 │ ██████░░░░           │    ✓     │
 │   10   │ qwen2.5-vl          │      2,693 │ ██████░░░░           │    ✓     │
 │   11   │ llava-onevision     │      7,317 │ ░░░░░░░░░░           │    ✓     │
+│   12   │ phi4-multimodal     │      7,553 │ ░░░░░░░░░░           │    ✓     │
 ╰────────┴─────────────────────┴────────────┴──────────────────────┴──────────╯
 
 ╭────────────────────────────────── Summary ───────────────────────────────────╮
 │ Best: deepseek-ocr-tiny (73 tokens)                                          │
-│ Worst: llava-onevision (7,317 tokens)                                        │
-│ Potential Savings: 7,244 tokens (99.0%)                                      │
+│ Worst: phi4-multimodal (7,553 tokens)                                        │
+│ Potential Savings: 7,480 tokens (99.0%)                                      │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ```
 
@@ -177,6 +178,7 @@ Comparing models for dummy image (H×W): 1920×1080
 | DeepSeek-OCR (base) | `deepseek-ocr-base` | ✓ | |
 | DeepSeek-OCR (large) | `deepseek-ocr-large` | ✓ | |
 | DeepSeek-OCR (gundam) | `deepseek-ocr-gundam` | ✓ | |
+| Phi-4-Multimodal | `phi4-multimodal` | ✓ | |
 
 ## License
 
