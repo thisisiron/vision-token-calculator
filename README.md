@@ -105,19 +105,35 @@ Supported input formats: `.jpg`, `.jpeg`, `.png`, `.webp` (case-insensitive)
 <summary>Single Image Analysis</summary>
 
 ```text
-Using dummy image (H×W): 1024×768
+Using dummy image: 1920 x 1080
                         ╔══════════════════════════════╗
                         ║ VISION TOKEN ANALYSIS REPORT ║
                         ╚══════════════════════════════╝
 ╭───────────────────────────────── MODEL INFO ─────────────────────────────────╮
-│   Model Name                qwen2.5-vl                                       │
+│   Model Name                deepseek-ocr-tiny                                │
+│   Processing Method         Native Resolution                                │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ╭───────────────────────────────── IMAGE INFO ─────────────────────────────────╮
-│   Original Size (H×W)       1024×768                                         │
-│   Resized Size (H×W)        1036×756                                         │
+│   Source                    Dummy image (H×W): 1920×1080                     │
+│   Original Size (H×W)       1920×1080                                        │
+│   Resized Size (H×W)        512×512                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭───────────────────────────────── PATCH INFO ─────────────────────────────────╮
+│   Patch Size (ViT)          16                                               │
+│   Patch Grid (H×W)          32×32                                            │
+│   Total Patches             1024                                             │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ╭───────────────────────────────── TOKEN INFO ─────────────────────────────────╮
-│   Image Token               999                                              │
+│   Image Token (<image>)     64                                               │
+│   Image Newline Token       8                                                │
+│   (<image_newline>)                                                          │
+│   Image Separator Token     1                                                │
+│   (<image_separator>)                                                        │
+│   Total Image Tokens        73                                               │
+│   Pixels per Token          3591.0 px/token                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭──────────────────────────────── TOKEN FORMAT ────────────────────────────────╮
+│          (<image>*8 + <image_newline>) * 8 + <image_seperator> = 73          │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ```
 
