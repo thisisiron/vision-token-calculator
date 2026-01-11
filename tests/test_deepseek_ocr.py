@@ -50,7 +50,7 @@ class TestDeepSeekOCRNativeResolution:
         analyst = DeepSeekOCRAnalyst(mode="tiny")
         result = analyst.calculate_image((512, 512))
 
-        assert result["image_token"][1] == 73
+        assert result["number_of_image_tokens"] == 73
         assert result["mode"] == "tiny"
         assert result["base_size"] == 512
 
@@ -61,7 +61,7 @@ class TestDeepSeekOCRNativeResolution:
         analyst = DeepSeekOCRAnalyst(mode="small")
         result = analyst.calculate_image((640, 640))
 
-        assert result["image_token"][1] == 111
+        assert result["number_of_image_tokens"] == 111
         assert result["mode"] == "small"
         assert result["base_size"] == 640
 
@@ -72,7 +72,7 @@ class TestDeepSeekOCRNativeResolution:
         analyst = DeepSeekOCRAnalyst(mode="base")
         result = analyst.calculate_image((1024, 1024))
 
-        assert result["image_token"][1] == 273
+        assert result["number_of_image_tokens"] == 273
         assert result["mode"] == "base"
         assert result["base_size"] == 1024
 
@@ -83,7 +83,7 @@ class TestDeepSeekOCRNativeResolution:
         analyst = DeepSeekOCRAnalyst(mode="large")
         result = analyst.calculate_image((1280, 1280))
 
-        assert result["image_token"][1] == 421
+        assert result["number_of_image_tokens"] == 421
         assert result["mode"] == "large"
         assert result["base_size"] == 1280
 
@@ -99,10 +99,10 @@ class TestDeepSeekOCRNativeResolution:
         result_large = analyst.calculate_image((1920, 1080))
         result_huge = analyst.calculate_image((4000, 3000))
 
-        assert result_small["image_token"][1] == 273
-        assert result_medium["image_token"][1] == 273
-        assert result_large["image_token"][1] == 273
-        assert result_huge["image_token"][1] == 273
+        assert result_small["number_of_image_tokens"] == 273
+        assert result_medium["number_of_image_tokens"] == 273
+        assert result_large["number_of_image_tokens"] == 273
+        assert result_huge["number_of_image_tokens"] == 273
 
 
 class TestDeepSeekOCRGundamMode:
@@ -515,3 +515,24 @@ class TestDeepSeekOCRTokenFormula:
 
         calculated_local = (num_row * width_tiles + 1) * (num_row * height_tiles)
         assert calculated_local == expected_local
+
+
+class TestDeepSeekOCRTokenSeparation:
+    """Test that token types are properly separated."""
+
+    def test_native_mode_separates_image_tokens(self):
+        """Native mode should separate <image>, <image_newline>, <image_separator>."""
+        from vt_calculator.analysts.analyst import DeepSeekOCRAnalyst
+
+        analyst = DeepSeekOCRAnalyst(mode="tiny")
+        result = analyst.calculate_image((512, 512))
+
+        # num_row = 8 for tiny mode
+        # Pure <image> tokens: 8 * 8 = 64
+        assert result["image_token"][1] == 64
+        # <image_newline> tokens: 8 (one per row)
+        assert result["image_newline_token"][1] == 8
+        # <image_separator> token: 1
+        assert result["image_separator_token"][1] == 1
+        # Total: 64 + 8 + 1 = 73
+        assert result["number_of_image_tokens"] == 73
