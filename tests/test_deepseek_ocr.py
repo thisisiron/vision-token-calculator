@@ -287,6 +287,9 @@ class TestDeepSeekOCROutputFormat:
         required_keys = [
             "processing_method",
             "image_token",
+            "image_newline_token",
+            "image_separator_token",
+            "number_of_image_tokens",
             "image_token_format",
             "image_size",
             "resized_size",
@@ -301,7 +304,7 @@ class TestDeepSeekOCROutputFormat:
             assert key in result, f"Missing required key: {key}"
 
     def test_image_token_is_tuple(self):
-        """image_token must be (token_name, count) tuple."""
+        """image_token must be (token_name, count) tuple with pure <image> count."""
         from vt_calculator.analysts.analyst import DeepSeekOCRAnalyst
 
         analyst = DeepSeekOCRAnalyst(mode="base")
@@ -311,7 +314,8 @@ class TestDeepSeekOCROutputFormat:
         assert len(result["image_token"]) == 2
         assert result["image_token"][0] == "<image>"
         assert isinstance(result["image_token"][1], int)
-        assert result["image_token"][1] > 0
+        # Base mode: 16*16 = 256 pure <image> tokens
+        assert result["image_token"][1] == 256
 
     def test_gundam_mode_has_crop_info(self):
         """Gundam mode should include crop information."""
