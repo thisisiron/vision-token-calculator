@@ -671,7 +671,11 @@ class DeepSeekOCRAnalyst(VLMAnalyst):
         num_row_base = self._calculate_num_row(self.base_size)
         num_row_local = self._calculate_num_row(self.image_size)
 
-        global_tokens = self._calculate_native_tokens(num_row_base)
+        # Global token breakdown
+        global_image_tokens = num_row_base * num_row_base
+        global_newline_tokens = num_row_base
+        global_separator_tokens = 1
+        global_tokens = global_image_tokens + global_newline_tokens + global_separator_tokens
 
         # Determine crop grid: no crops for small images, otherwise use optimal tiling
         if width <= self.image_size and height <= self.image_size:
@@ -685,12 +689,23 @@ class DeepSeekOCRAnalyst(VLMAnalyst):
             )
         width_tiles, height_tiles = crop_grid
 
+        # Local token breakdown
+        local_image_tokens = 0
+        local_newline_tokens = 0
         local_tokens = 0
         if width_tiles > 1 or height_tiles > 1:
+            local_cols = num_row_local * width_tiles
+            local_rows = num_row_local * height_tiles
+            local_image_tokens = local_cols * local_rows
+            local_newline_tokens = local_rows
             local_tokens = self._calculate_local_tokens(
                 num_row_local, width_tiles, height_tiles
             )
 
+        # Total breakdown
+        total_image_tokens = global_image_tokens + local_image_tokens
+        total_newline_tokens = global_newline_tokens + local_newline_tokens
+        total_separator_tokens = global_separator_tokens  # Only in global
         total_tokens = global_tokens + local_tokens
 
         global_patches = (self.base_size // self.patch_size) ** 2
@@ -723,7 +738,10 @@ class DeepSeekOCRAnalyst(VLMAnalyst):
 
         return {
             "processing_method": "tile_based",
-            "image_token": (self.image_token, total_tokens),
+            "image_token": (self.image_token, total_image_tokens),
+            "image_newline_token": ("<image_newline>", total_newline_tokens),
+            "image_separator_token": ("<image_separator>", total_separator_tokens),
+            "number_of_image_tokens": total_tokens,
             "image_token_format": token_format,
             "image_size": (height, width),
             "resized_size": (self.base_size, self.base_size),
