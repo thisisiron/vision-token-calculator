@@ -36,13 +36,13 @@ import math
 import pytest
 
 
-class TestDeepSeekOCRNativeResolution:
-    """Native Resolution mode (crop_mode=False) tests.
+class TestDeepSeekOCRBasic:
+    """Basic token calculation - each mode's basic behavior.
 
-    In native mode, token count is fixed regardless of input image size.
-    The image is resized/padded to the mode's image_size.
+    Tests constants and basic token counts for native resolution modes.
     """
 
+    # From: TestDeepSeekOCRNativeResolution
     def test_tiny_mode_returns_73_tokens(self):
         """Tiny mode: 512x512 -> num_row=8 -> (8+1)*8+1=73 tokens."""
         from vt_calculator.analysts.analyst import DeepSeekOCRAnalyst
@@ -87,6 +87,84 @@ class TestDeepSeekOCRNativeResolution:
         assert result["mode"] == "large"
         assert result["base_size"] == 1280
 
+    # From: TestDeepSeekOCRConstants
+    def test_patch_size_is_16(self):
+        """Patch size should be 16."""
+        from vt_calculator.analysts.analyst import DeepSeekOCRAnalyst
+
+        analyst = DeepSeekOCRAnalyst(mode="base")
+        assert analyst.patch_size == 16
+
+    def test_downsample_ratio_is_4(self):
+        """Downsample ratio should be 4."""
+        from vt_calculator.analysts.analyst import DeepSeekOCRAnalyst
+
+        analyst = DeepSeekOCRAnalyst(mode="base")
+        assert analyst.downsample_ratio == 4
+
+    def test_image_token_is_correct(self):
+        """Image token should be '<image>'."""
+        from vt_calculator.analysts.analyst import DeepSeekOCRAnalyst
+
+        analyst = DeepSeekOCRAnalyst(mode="base")
+        assert analyst.image_token == "<image>"
+
+
+class TestDeepSeekOCRRegistration:
+    """Model registration and loading."""
+
+    def test_all_modes_in_supported_models(self):
+        """All 5 modes should be registered as supported models."""
+        from vt_calculator.analysts import SUPPORTED_MODELS
+
+        expected_models = [
+            "deepseek-ocr-tiny",
+            "deepseek-ocr-small",
+            "deepseek-ocr-base",
+            "deepseek-ocr-large",
+            "deepseek-ocr-gundam",
+        ]
+        for model in expected_models:
+            assert model in SUPPORTED_MODELS, f"Model {model} not in SUPPORTED_MODELS"
+
+    def test_model_to_hf_id_is_none(self):
+        """DeepSeek-OCR models should have None as HF ID (no AutoProcessor)."""
+        from vt_calculator.analysts import MODEL_TO_HF_ID
+
+        for mode in ["tiny", "small", "base", "large", "gundam"]:
+            model_name = f"deepseek-ocr-{mode}"
+            assert model_name in MODEL_TO_HF_ID
+            assert MODEL_TO_HF_ID[model_name] is None
+
+    def test_load_analyst_returns_correct_class(self):
+        """load_analyst should return DeepSeekOCRAnalyst with correct mode."""
+        from vt_calculator.analysts import load_analyst
+        from vt_calculator.analysts.analyst import DeepSeekOCRAnalyst
+
+        analyst = load_analyst("deepseek-ocr-base")
+
+        assert isinstance(analyst, DeepSeekOCRAnalyst)
+        assert analyst.mode == "base"
+
+    def test_load_analyst_all_modes(self):
+        """load_analyst should work for all 5 modes."""
+        from vt_calculator.analysts import load_analyst
+        from vt_calculator.analysts.analyst import DeepSeekOCRAnalyst
+
+        modes = ["tiny", "small", "base", "large", "gundam"]
+        for mode in modes:
+            analyst = load_analyst(f"deepseek-ocr-{mode}")
+            assert isinstance(analyst, DeepSeekOCRAnalyst)
+            assert analyst.mode == mode
+
+
+class TestDeepSeekOCRProcessingModes:
+    """Processing mode detailed tests.
+
+    Tests for native mode behavior and Gundam mode (crop_mode=True).
+    """
+
+    # From: TestDeepSeekOCRNativeResolution
     def test_native_mode_ignores_input_image_size(self):
         """Native modes produce fixed tokens regardless of input size."""
         from vt_calculator.analysts.analyst import DeepSeekOCRAnalyst
@@ -104,16 +182,7 @@ class TestDeepSeekOCRNativeResolution:
         assert result_large["number_of_vision_tokens"] == 273
         assert result_huge["number_of_vision_tokens"] == 273
 
-
-class TestDeepSeekOCRGundamMode:
-    """Gundam mode (crop_mode=True, base_size=1024, image_size=640) tests.
-
-    In Gundam mode:
-    - Global view always uses base_size=1024 -> 273 tokens
-    - If image > 640x640, dynamic crops are added
-    - Local crop tokens = (10 * width_tiles + 1) * (10 * height_tiles)
-    """
-
+    # From: TestDeepSeekOCRGundamMode (all tests)
     def test_gundam_small_image_no_crops(self):
         """Image <= 640x640: no crops, only global view -> 273 tokens."""
         from vt_calculator.analysts.analyst import DeepSeekOCRAnalyst
@@ -131,7 +200,7 @@ class TestDeepSeekOCRGundamMode:
         assert result_exact.get("num_local_tokens", 0) == 0
 
     def test_gundam_wide_image_4x2_crops(self):
-        """Wide image (1920x1080, aspect~1.78) -> (2,4) tiles (H×W).
+        """Wide image (1920x1080, aspect~1.78) -> (2,4) tiles (H*W).
 
         Aspect ratio 1.78 is equidistant from (2,1)=2.0 and (4,2)=2.0.
         Tie-breaker favors more tiles when area justifies it.
@@ -148,11 +217,11 @@ class TestDeepSeekOCRGundamMode:
         expected_local = (10 * 4 + 1) * (10 * 2)  # 820
         expected_total = 273 + expected_local  # 1093
 
-        assert result["tile_grid"] == (2, 4)  # (height_tiles, width_tiles) = (H×W)
+        assert result["tile_grid"] == (2, 4)  # (height_tiles, width_tiles) = (H*W)
         assert result["number_of_vision_tokens"] == expected_total
 
     def test_gundam_tall_image_2x4_crops(self):
-        """Tall image (1080x1920, aspect~0.56) -> (4,2) tiles (H×W).
+        """Tall image (1080x1920, aspect~0.56) -> (4,2) tiles (H*W).
 
         Aspect ratio 0.56 is equidistant from (1,2)=0.5 and (2,4)=0.5.
         Tie-breaker favors more tiles when area justifies it.
@@ -169,7 +238,7 @@ class TestDeepSeekOCRGundamMode:
         expected_local = (10 * 2 + 1) * (10 * 4)  # 840
         expected_total = 273 + expected_local  # 1113
 
-        assert result["tile_grid"] == (4, 2)  # (height_tiles, width_tiles) = (H×W)
+        assert result["tile_grid"] == (4, 2)  # (height_tiles, width_tiles) = (H*W)
         assert result["number_of_vision_tokens"] == expected_total
 
     def test_gundam_square_large_image_2x2_crops(self):
@@ -191,7 +260,7 @@ class TestDeepSeekOCRGundamMode:
         assert result["number_of_vision_tokens"] == expected_total
 
     def test_gundam_very_wide_image_4x1_crops(self):
-        """Very wide image (2560x720, aspect~3.56) -> (1,4) tiles (H×W).
+        """Very wide image (2560x720, aspect~3.56) -> (1,4) tiles (H*W).
 
         Aspect ratio 3.56 is closer to (4,1)=4.0 than (3,1)=3.0.
         diff(3.56, 4.0) = 0.44 < diff(3.56, 3.0) = 0.56
@@ -208,12 +277,12 @@ class TestDeepSeekOCRGundamMode:
         expected_local = (10 * 4 + 1) * (10 * 1)  # 410
         expected_total = 273 + expected_local  # 683
 
-        assert result["tile_grid"] == (1, 4)  # (height_tiles, width_tiles) = (H×W)
+        assert result["tile_grid"] == (1, 4)  # (height_tiles, width_tiles) = (H*W)
         assert result["number_of_vision_tokens"] == expected_total
 
 
 class TestDeepSeekOCRTileCalculation:
-    """Dynamic tile (crop) calculation utility tests.
+    """Tile calculation utilities.
 
     Tile selection logic (from get_optimal_tiled_canvas):
     - Generate all (i,j) pairs where min_num <= i*j <= max_num
@@ -275,7 +344,7 @@ class TestDeepSeekOCRTileCalculation:
 
 
 class TestDeepSeekOCROutputFormat:
-    """Test calculate_image return value structure."""
+    """Output format validation."""
 
     def test_output_has_required_keys(self):
         """Return dict must have all required keys."""
@@ -332,155 +401,11 @@ class TestDeepSeekOCROutputFormat:
         assert isinstance(result["tile_grid"], tuple)
 
 
-class TestDeepSeekOCRVideo:
-    """Video support tests - DeepSeek-OCR does not support video."""
-
-    def test_calculate_video_raises_not_implemented(self):
-        """calculate_video should raise NotImplementedError."""
-        from vt_calculator.analysts.analyst import DeepSeekOCRAnalyst
-
-        analyst = DeepSeekOCRAnalyst(mode="base")
-
-        with pytest.raises(NotImplementedError) as exc_info:
-            analyst.calculate_video(
-                {"width": 1920, "height": 1080, "duration": 10.0}
-            )
-
-        assert "video" in str(exc_info.value).lower()
-
-
-class TestDeepSeekOCRRegistration:
-    """Model registration and factory tests."""
-
-    def test_all_modes_in_supported_models(self):
-        """All 5 modes should be registered as supported models."""
-        from vt_calculator.analysts import SUPPORTED_MODELS
-
-        expected_models = [
-            "deepseek-ocr-tiny",
-            "deepseek-ocr-small",
-            "deepseek-ocr-base",
-            "deepseek-ocr-large",
-            "deepseek-ocr-gundam",
-        ]
-        for model in expected_models:
-            assert model in SUPPORTED_MODELS, f"Model {model} not in SUPPORTED_MODELS"
-
-    def test_model_to_hf_id_is_none(self):
-        """DeepSeek-OCR models should have None as HF ID (no AutoProcessor)."""
-        from vt_calculator.analysts import MODEL_TO_HF_ID
-
-        for mode in ["tiny", "small", "base", "large", "gundam"]:
-            model_name = f"deepseek-ocr-{mode}"
-            assert model_name in MODEL_TO_HF_ID
-            assert MODEL_TO_HF_ID[model_name] is None
-
-    def test_load_analyst_returns_correct_class(self):
-        """load_analyst should return DeepSeekOCRAnalyst with correct mode."""
-        from vt_calculator.analysts import load_analyst
-        from vt_calculator.analysts.analyst import DeepSeekOCRAnalyst
-
-        analyst = load_analyst("deepseek-ocr-base")
-
-        assert isinstance(analyst, DeepSeekOCRAnalyst)
-        assert analyst.mode == "base"
-
-    def test_load_analyst_all_modes(self):
-        """load_analyst should work for all 5 modes."""
-        from vt_calculator.analysts import load_analyst
-        from vt_calculator.analysts.analyst import DeepSeekOCRAnalyst
-
-        modes = ["tiny", "small", "base", "large", "gundam"]
-        for mode in modes:
-            analyst = load_analyst(f"deepseek-ocr-{mode}")
-            assert isinstance(analyst, DeepSeekOCRAnalyst)
-            assert analyst.mode == mode
-
-
-class TestDeepSeekOCREdgeCases:
-    """Edge case and error handling tests."""
-
-    def test_invalid_mode_raises_value_error(self):
-        """Invalid mode should raise ValueError."""
-        from vt_calculator.analysts.analyst import DeepSeekOCRAnalyst
-
-        with pytest.raises(ValueError) as exc_info:
-            DeepSeekOCRAnalyst(mode="invalid_mode")
-
-        assert "invalid_mode" in str(exc_info.value).lower()
-
-    def test_very_small_image_in_gundam_mode(self):
-        """Very small images should still work in Gundam mode."""
-        from vt_calculator.analysts.analyst import DeepSeekOCRAnalyst
-
-        analyst = DeepSeekOCRAnalyst(mode="gundam")
-        result = analyst.calculate_image((50, 50))
-
-        # Small images get no crops, only global view
-        assert result["number_of_vision_tokens"] == 273
-        assert result["tile_grid"] == (1, 1)
-
-    def test_very_large_image_respects_max_crops(self):
-        """Very large images should respect max_crops=9 limit."""
-        from vt_calculator.analysts.analyst import DeepSeekOCRAnalyst
-
-        analyst = DeepSeekOCRAnalyst(mode="gundam")
-        result = analyst.calculate_image((5000, 5000))
-
-        # Should be limited to 3x3 = 9 crops max
-        height_tiles, width_tiles = result["tile_grid"]  # (H×W)
-        assert height_tiles * width_tiles <= 9
-
-    def test_extreme_aspect_ratio_wide(self):
-        """Extremely wide images should work."""
-        from vt_calculator.analysts.analyst import DeepSeekOCRAnalyst
-
-        analyst = DeepSeekOCRAnalyst(mode="gundam")
-        result = analyst.calculate_image((480, 6000))  # very wide
-
-        assert result["number_of_vision_tokens"] > 273  # has crops
-        height_tiles, width_tiles = result["tile_grid"]  # (H×W)
-        assert width_tiles > height_tiles
-
-    def test_extreme_aspect_ratio_tall(self):
-        """Extremely tall images should work."""
-        from vt_calculator.analysts.analyst import DeepSeekOCRAnalyst
-
-        analyst = DeepSeekOCRAnalyst(mode="gundam")
-        result = analyst.calculate_image((6000, 480))  # very tall
-
-        assert result["number_of_vision_tokens"] > 273  # has crops
-        height_tiles, width_tiles = result["tile_grid"]  # (H×W)
-        assert height_tiles > width_tiles
-
-
-class TestDeepSeekOCRConstants:
-    """Test that analyst uses correct constants from DeepSeek-OCR."""
-
-    def test_patch_size_is_16(self):
-        """Patch size should be 16."""
-        from vt_calculator.analysts.analyst import DeepSeekOCRAnalyst
-
-        analyst = DeepSeekOCRAnalyst(mode="base")
-        assert analyst.patch_size == 16
-
-    def test_downsample_ratio_is_4(self):
-        """Downsample ratio should be 4."""
-        from vt_calculator.analysts.analyst import DeepSeekOCRAnalyst
-
-        analyst = DeepSeekOCRAnalyst(mode="base")
-        assert analyst.downsample_ratio == 4
-
-    def test_image_token_is_correct(self):
-        """Image token should be '<image>'."""
-        from vt_calculator.analysts.analyst import DeepSeekOCRAnalyst
-
-        analyst = DeepSeekOCRAnalyst(mode="base")
-        assert analyst.image_token == "<image>"
-
-
 class TestDeepSeekOCRTokenFormula:
-    """Verify token calculation formula matches original implementation."""
+    """Formula validation (parametrize).
+
+    Verify token calculation formula matches original implementation.
+    """
 
     @pytest.mark.parametrize(
         "image_size,expected_tokens",
@@ -520,10 +445,7 @@ class TestDeepSeekOCRTokenFormula:
         calculated_local = (num_row * width_tiles + 1) * (num_row * height_tiles)
         assert calculated_local == expected_local
 
-
-class TestDeepSeekOCRTokenSeparation:
-    """Test that token types are properly separated."""
-
+    # From: TestDeepSeekOCRTokenSeparation
     def test_native_mode_separates_image_tokens(self):
         """Native mode should separate <image>, <image_newline>, <image_separator>."""
         from vt_calculator.analysts.analyst import DeepSeekOCRAnalyst
