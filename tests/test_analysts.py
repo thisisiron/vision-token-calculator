@@ -1,7 +1,15 @@
+"""HuggingFace-based VLM Analyst Tests.
+
+This module tests VLM analysts against actual HuggingFace processors
+to verify token count calculations are accurate.
+"""
+
+from dataclasses import dataclass
+from typing import Type
+
 import torch
 import pytest
 from transformers import AutoProcessor, AutoConfig
-
 
 from vt_calculator.utils import create_dummy_image
 from vt_calculator.video import get_video_metadata, extract_video_frames
@@ -15,7 +23,83 @@ from vt_calculator.analysts.analyst import (
 )
 
 
+# =============================================================================
+# Model Configuration
+# =============================================================================
+
+
+@dataclass
+class HFModelConfig:
+    """HuggingFace-based VLM model test configuration."""
+
+    name: str
+    hf_path: str
+    analyst_class: Type
+    needs_config: bool = False
+    test_image_size: tuple = (800, 800)
+    supports_video: bool = False
+    video_fps: float = 1.0
+
+
+HF_MODELS = [
+    HFModelConfig(
+        name="qwen2.5-vl",
+        hf_path="Qwen/Qwen2.5-VL-3B-Instruct",
+        analyst_class=Qwen2_5_VLAnalyst,
+        supports_video=True,
+    ),
+    HFModelConfig(
+        name="qwen3-vl",
+        hf_path="Qwen/Qwen3-VL-2B-Instruct",
+        analyst_class=Qwen3VLAnalyst,
+        supports_video=True,
+    ),
+    HFModelConfig(
+        name="internvl3",
+        hf_path="OpenGVLab/InternVL3-1B-hf",
+        analyst_class=InternVLAnalyst,
+        needs_config=True,
+    ),
+    HFModelConfig(
+        name="llava",
+        hf_path="llava-hf/llava-1.5-7b-hf",
+        analyst_class=LLaVAAnalyst,
+    ),
+    HFModelConfig(
+        name="llava-next",
+        hf_path="llava-hf/llava-v1.6-mistral-7b-hf",
+        analyst_class=LLaVANextAnalyst,
+    ),
+    HFModelConfig(
+        name="llava-onevision",
+        hf_path="llava-hf/llava-onevision-qwen2-7b-ov-hf",
+        analyst_class=LlavaOnevisionAnalyst,
+        needs_config=True,
+    ),
+]
+
+
+def get_image_test_configs():
+    """Generate pytest params for image tests."""
+    return [pytest.param(cfg, id=cfg.name) for cfg in HF_MODELS]
+
+
+def get_video_test_configs():
+    """Generate pytest params for video tests (supported models only)."""
+    return [
+        pytest.param(cfg, id=f"{cfg.name}-video")
+        for cfg in HF_MODELS
+        if cfg.supports_video
+    ]
+
+
+# =============================================================================
+# Helper Functions
+# =============================================================================
+
+
 def _count_tokens_via_processor(processor, pil_image) -> int:
+    """Count image tokens using actual HuggingFace processor."""
     messages = [
         {
             "role": "user",
@@ -59,6 +143,7 @@ def _count_tokens_via_processor(processor, pil_image) -> int:
 
 
 def _get_processor_image_token_str(processor) -> str:
+    """Get image token string from processor."""
     if getattr(processor, "image_token", None) is not None:
         return processor.image_token
     if getattr(processor, "image_token_id", None) is not None:
@@ -70,6 +155,7 @@ def _get_processor_image_token_str(processor) -> str:
 
 
 def _assert_image_token_matches(processor, analyst) -> None:
+    """Assert processor and analyst use the same image token."""
     proc_token = _get_processor_image_token_str(processor)
     assert proc_token == analyst.image_token, (
         f"Mismatch between processor-image token ({proc_token}) and "
@@ -78,6 +164,7 @@ def _assert_image_token_matches(processor, analyst) -> None:
 
 
 def _assert_token_count_matches(counted_tokens: int, analyst_tokens: int) -> None:
+    """Assert token counts match between processor and analyst."""
     assert counted_tokens == analyst_tokens, (
         f"Mismatch between processor-counted tokens ({counted_tokens}) and "
         f"Analyst-computed tokens ({analyst_tokens})."
@@ -85,6 +172,7 @@ def _assert_token_count_matches(counted_tokens: int, analyst_tokens: int) -> Non
 
 
 def _count_video_tokens_via_processor(processor, video_path, fps=None) -> int:
+    """Count video tokens using actual HuggingFace processor."""
     if "Qwen2" not in processor.__class__.__name__ and "Qwen2" not in str(processor):
         raise NotImplementedError(
             "Video token counting is currently only supported for Qwen2-VL models. "
@@ -128,66 +216,34 @@ def _count_video_tokens_via_processor(processor, video_path, fps=None) -> int:
     raise ValueError("Could not determine video tokens for processor")
 
 
+def _create_analyst(config: HFModelConfig, processor, model_config):
+    """Create analyst instance from config."""
+    if config.needs_config:
+        return config.analyst_class(processor, model_config)
+    return config.analyst_class(processor)
+
+
+# =============================================================================
+# Tests
+# =============================================================================
+
+
 @pytest.mark.network
 @pytest.mark.slow
-@pytest.mark.parametrize(
-    "model_path,analyst_factory,image_size,needs_config",
-    [
-        pytest.param(
-            "Qwen/Qwen2.5-VL-3B-Instruct",
-            lambda proc, cfg: Qwen2_5_VLAnalyst(proc),
-            (800, 800),
-            False,
-            id="qwen2.5-vl",
-        ),
-        pytest.param(
-            "Qwen/Qwen3-VL-2B-Instruct",
-            lambda proc, cfg: Qwen3VLAnalyst(proc),
-            (800, 800),
-            False,
-            id="qwen3-vl",
-        ),
-        pytest.param(
-            "OpenGVLab/InternVL3-1B-hf",
-            lambda proc, cfg: InternVLAnalyst(proc, cfg),
-            (800, 800),
-            True,
-            id="internvl3",
-        ),
-        pytest.param(
-            "llava-hf/llava-1.5-7b-hf",
-            lambda proc, cfg: LLaVAAnalyst(proc),
-            (800, 800),
-            False,
-            id="llava",
-        ),
-        pytest.param(
-            "llava-hf/llava-v1.6-mistral-7b-hf",
-            lambda proc, cfg: LLaVANextAnalyst(proc),
-            (800, 800),
-            False,
-            id="llava-next",
-        ),
-        pytest.param(
-            "llava-hf/llava-onevision-qwen2-7b-ov-hf",
-            lambda proc, cfg: LlavaOnevisionAnalyst(proc, cfg),
-            (800, 800),
-            True,
-            id="llava-onevision",
-        ),
-    ],
-)
-def test_analyst_token_count_matches_transformers(
-    model_path, analyst_factory, image_size, needs_config
-):
-    image = create_dummy_image(width=image_size[1], height=image_size[0])
+@pytest.mark.parametrize("config", get_image_test_configs())
+def test_analyst_token_count_matches_transformers(config: HFModelConfig):
+    """Verify analyst token count matches actual HuggingFace processor count."""
+    image = create_dummy_image(
+        width=config.test_image_size[1],
+        height=config.test_image_size[0],
+    )
 
-    processor = AutoProcessor.from_pretrained(model_path)
-    config = AutoConfig.from_pretrained(model_path) if needs_config else None
+    processor = AutoProcessor.from_pretrained(config.hf_path)
+    model_config = AutoConfig.from_pretrained(config.hf_path) if config.needs_config else None
 
     counted_tokens = _count_tokens_via_processor(processor, image)
 
-    analyst = analyst_factory(processor, config)
+    analyst = _create_analyst(config, processor, model_config)
     result = analyst.calculate_image((image.height, image.width))
     analyst_tokens = int(result["image_token"][1])
 
@@ -197,35 +253,20 @@ def test_analyst_token_count_matches_transformers(
 
 @pytest.mark.network
 @pytest.mark.slow
-@pytest.mark.parametrize(
-    "model_path,analyst_factory,fps",
-    [
-        pytest.param(
-            "Qwen/Qwen2.5-VL-3B-Instruct",
-            lambda proc, cfg: Qwen2_5_VLAnalyst(proc),
-            1.0,
-            id="qwen2.5-vl-video",
-        ),
-        pytest.param(
-            "Qwen/Qwen3-VL-2B-Instruct",
-            lambda proc, cfg: Qwen3VLAnalyst(proc),
-            1.0,
-            id="qwen3-vl-video",
-        ),
-    ],
-)
-def test_analyst_video_token_count_matches_transformers(
-    model_path, analyst_factory, fps, dummy_video
-):
-    processor = AutoProcessor.from_pretrained(model_path)
-    config = AutoConfig.from_pretrained(model_path)
+@pytest.mark.parametrize("config", get_video_test_configs())
+def test_analyst_video_token_count_matches_transformers(config: HFModelConfig, dummy_video):
+    """Verify analyst video token count matches actual HuggingFace processor count."""
+    processor = AutoProcessor.from_pretrained(config.hf_path)
+    model_config = AutoConfig.from_pretrained(config.hf_path)
 
-    counted_tokens = _count_video_tokens_via_processor(processor, dummy_video, fps=fps)
+    counted_tokens = _count_video_tokens_via_processor(
+        processor, dummy_video, fps=config.video_fps
+    )
 
-    analyst = analyst_factory(processor, config)
+    analyst = _create_analyst(config, processor, model_config)
     metadata = get_video_metadata(dummy_video)
 
-    result = analyst.calculate_video(metadata, fps=fps)
+    result = analyst.calculate_video(metadata, fps=config.video_fps)
     analyst_tokens = result["number_of_video_tokens"]
 
     _assert_token_count_matches(counted_tokens, analyst_tokens)
