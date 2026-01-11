@@ -438,7 +438,7 @@ class TestDeepSeekOCREdgeCases:
         analyst = DeepSeekOCRAnalyst(mode="gundam")
         result = analyst.calculate_image((480, 6000))  # very wide
 
-        assert result["image_token"][1] > 273  # has crops
+        assert result["number_of_image_tokens"] > 273  # has crops
         height_tiles, width_tiles = result["tile_grid"]  # (H×W)
         assert width_tiles > height_tiles
 
@@ -449,7 +449,7 @@ class TestDeepSeekOCREdgeCases:
         analyst = DeepSeekOCRAnalyst(mode="gundam")
         result = analyst.calculate_image((6000, 480))  # very tall
 
-        assert result["image_token"][1] > 273  # has crops
+        assert result["number_of_image_tokens"] > 273  # has crops
         height_tiles, width_tiles = result["tile_grid"]  # (H×W)
         assert height_tiles > width_tiles
 
