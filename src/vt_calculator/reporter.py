@@ -415,8 +415,8 @@ class Reporter:
                 items_to_show.append((display_name, token_count))
 
         # Add total tokens if available (for DeepSeek-OCR)
-        if "number_of_image_tokens" in result and result.get("image_newline_token"):
-            items_to_show.append(("Total Image Tokens", result["number_of_image_tokens"]))
+        if "number_of_vision_tokens" in result and result.get("image_newline_token"):
+            items_to_show.append(("Total Vision Tokens", result["number_of_vision_tokens"]))
 
         if items_to_show:
             for display_name, token_count in items_to_show:
@@ -429,8 +429,8 @@ class Reporter:
                 total_tokens = result.get("number_of_video_tokens", 0)
             else:
                 total_pixels = resized_h * resized_w
-                # Use number_of_image_tokens if available, otherwise fall back to image_token
-                total_tokens = result.get("number_of_image_tokens") or result.get("image_token", (None, 0))[1]
+                # Use number_of_vision_tokens if available, otherwise fall back to image_token
+                total_tokens = result.get("number_of_vision_tokens") or result.get("image_token", (None, 0))[1]
 
             if total_tokens and total_tokens > 0:
                 pixels_per_token = total_pixels / total_tokens

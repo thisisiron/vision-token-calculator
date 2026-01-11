@@ -37,8 +37,8 @@ def _extract_total_tokens(result: dict) -> int:
     Returns:
         Total number of tokens
     """
-    if "number_of_image_tokens" in result:
-        return int(result["number_of_image_tokens"])
+    if "number_of_vision_tokens" in result:
+        return int(result["number_of_vision_tokens"])
 
     total = 0
     for key in ["image_token", "image_start_token", "image_end_token"]:
@@ -92,7 +92,7 @@ def count_image_tokens(image_input, model_name: str = DEFAULT_MODEL) -> dict:
             + int(result["image_start_token"][1])
             + int(result["image_end_token"][1])
         )
-        result["number_of_image_tokens"] = total_tokens
+        result["number_of_vision_tokens"] = total_tokens
 
     return result
 
@@ -144,7 +144,7 @@ def process_directory(directory_path: str, model_name: str) -> dict:
         print_processing_status(filename, i, len(image_files))
 
         result = count_image_tokens(image_file, model_name)
-        token_count = int(result["number_of_image_tokens"])
+        token_count = int(result["number_of_vision_tokens"])
         token_counts.append(token_count)
         processed_files.append(
             {"filename": filename, "size": result["image_size"], "tokens": token_count}
