@@ -396,6 +396,8 @@ class Reporter:
         keys_to_check = [
             "number_of_video_tokens",
             "image_token",
+            "image_newline_token",
+            "image_separator_token",
             "image_start_token",
             "image_end_token",
         ]
@@ -412,6 +414,10 @@ class Reporter:
                 display_name = f"{display_label} ({token_symbol})"
                 items_to_show.append((display_name, token_count))
 
+        # Add total tokens if available (for DeepSeek-OCR)
+        if "number_of_image_tokens" in result and result.get("image_newline_token"):
+            items_to_show.append(("Total Image Tokens", result["number_of_image_tokens"]))
+
         if items_to_show:
             for display_name, token_count in items_to_show:
                 token_info_table.add_row(display_name, str(token_count))
@@ -423,7 +429,8 @@ class Reporter:
                 total_tokens = result.get("number_of_video_tokens", 0)
             else:
                 total_pixels = resized_h * resized_w
-                total_tokens = result.get("image_token", (None, 0))[1]
+                # Use number_of_image_tokens if available, otherwise fall back to image_token
+                total_tokens = result.get("number_of_image_tokens") or result.get("image_token", (None, 0))[1]
 
             if total_tokens and total_tokens > 0:
                 pixels_per_token = total_pixels / total_tokens
