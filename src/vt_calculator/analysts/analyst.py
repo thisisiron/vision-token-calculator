@@ -633,8 +633,13 @@ class DeepSeekOCRAnalyst(VLMAnalyst):
 
     def _calculate_native_mode(self, height: int, width: int) -> dict:
         num_row = self._calculate_num_row(self.image_size)
-        total_tokens = self._calculate_native_tokens(num_row)
         num_patches = (self.image_size // self.patch_size) ** 2
+
+        # Calculate individual token counts
+        num_image_tokens = num_row * num_row  # Pure <image> tokens
+        num_newline_tokens = num_row  # <image_newline> per row
+        num_separator_tokens = 1  # <image_separator> at end
+        total_tokens = num_image_tokens + num_newline_tokens + num_separator_tokens
 
         # Format: (<image>*N + <image_newline>) * N + <image_seperator>
         token_format = (
@@ -646,7 +651,10 @@ class DeepSeekOCRAnalyst(VLMAnalyst):
 
         return {
             "processing_method": "native_resolution",
-            "image_token": (self.image_token, total_tokens),
+            "image_token": (self.image_token, num_image_tokens),
+            "image_newline_token": ("<image_newline>", num_newline_tokens),
+            "image_separator_token": ("<image_separator>", num_separator_tokens),
+            "number_of_image_tokens": total_tokens,
             "image_token_format": token_format,
             "image_size": (height, width),
             "resized_size": (self.image_size, self.image_size),
