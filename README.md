@@ -129,7 +129,7 @@ Using dummy image: 1920 x 1080
 │   (<image_newline>)                                                          │
 │   Image Separator Token     1                                                │
 │   (<image_separator>)                                                        │
-│   Total Image Tokens        73                                               │
+│   Total Vision Tokens        73                                               │
 │   Pixels per Token          3591.0 px/token                                  │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ╭──────────────────────────────── TOKEN FORMAT ────────────────────────────────╮
