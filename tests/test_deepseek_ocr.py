@@ -125,8 +125,8 @@ class TestDeepSeekOCRGundamMode:
         result_small = analyst.calculate_image((500, 400))
 
         # Only global tokens (no local crops)
-        assert result_exact["image_token"][1] == 273
-        assert result_small["image_token"][1] == 273
+        assert result_exact["number_of_image_tokens"] == 273
+        assert result_small["number_of_image_tokens"] == 273
         assert result_exact.get("tile_grid") == (1, 1)
         assert result_exact.get("num_local_tokens", 0) == 0
 
@@ -149,7 +149,7 @@ class TestDeepSeekOCRGundamMode:
         expected_total = 273 + expected_local  # 1093
 
         assert result["tile_grid"] == (2, 4)  # (height_tiles, width_tiles) = (H×W)
-        assert result["image_token"][1] == expected_total
+        assert result["number_of_image_tokens"] == expected_total
 
     def test_gundam_tall_image_2x4_crops(self):
         """Tall image (1080x1920, aspect~0.56) -> (4,2) tiles (H×W).
@@ -170,7 +170,7 @@ class TestDeepSeekOCRGundamMode:
         expected_total = 273 + expected_local  # 1113
 
         assert result["tile_grid"] == (4, 2)  # (height_tiles, width_tiles) = (H×W)
-        assert result["image_token"][1] == expected_total
+        assert result["number_of_image_tokens"] == expected_total
 
     def test_gundam_square_large_image_2x2_crops(self):
         """Square large image (1280x1280) -> (2,2) tiles (min_num=2).
@@ -188,7 +188,7 @@ class TestDeepSeekOCRGundamMode:
         expected_total = 273 + expected_local  # 693
 
         assert result["tile_grid"] == (2, 2)
-        assert result["image_token"][1] == expected_total
+        assert result["number_of_image_tokens"] == expected_total
 
     def test_gundam_very_wide_image_4x1_crops(self):
         """Very wide image (2560x720, aspect~3.56) -> (1,4) tiles (H×W).
@@ -209,7 +209,7 @@ class TestDeepSeekOCRGundamMode:
         expected_total = 273 + expected_local  # 683
 
         assert result["tile_grid"] == (1, 4)  # (height_tiles, width_tiles) = (H×W)
-        assert result["image_token"][1] == expected_total
+        assert result["number_of_image_tokens"] == expected_total
 
 
 class TestDeepSeekOCRTileCalculation:
@@ -413,7 +413,7 @@ class TestDeepSeekOCREdgeCases:
         result = analyst.calculate_image((50, 50))
 
         # Small images get no crops, only global view
-        assert result["image_token"][1] == 273
+        assert result["number_of_image_tokens"] == 273
         assert result["tile_grid"] == (1, 1)
 
     def test_very_large_image_respects_max_crops(self):
@@ -536,3 +536,40 @@ class TestDeepSeekOCRTokenSeparation:
         assert result["image_separator_token"][1] == 1
         # Total: 64 + 8 + 1 = 73
         assert result["number_of_image_tokens"] == 73
+
+    def test_gundam_mode_separates_image_tokens_no_crops(self):
+        """Gundam mode without crops should separate tokens like native mode."""
+        from vt_calculator.analysts.analyst import DeepSeekOCRAnalyst
+
+        analyst = DeepSeekOCRAnalyst(mode="gundam")
+        result = analyst.calculate_image((640, 640))
+
+        # num_row_base = 16 for base_size=1024
+        # Pure <image> tokens: 16 * 16 = 256
+        assert result["image_token"][1] == 256
+        # <image_newline> tokens: 16
+        assert result["image_newline_token"][1] == 16
+        # <image_separator> token: 1
+        assert result["image_separator_token"][1] == 1
+        # Total: 256 + 16 + 1 = 273
+        assert result["number_of_image_tokens"] == 273
+
+    def test_gundam_mode_separates_image_tokens_with_crops(self):
+        """Gundam mode with crops should separate global and local tokens."""
+        from vt_calculator.analysts.analyst import DeepSeekOCRAnalyst
+
+        analyst = DeepSeekOCRAnalyst(mode="gundam")
+        result = analyst.calculate_image((1280, 1280))  # (2,2) tiles
+
+        # Global: num_row=16 -> 256 <image> + 16 <newline> + 1 <sep> = 273
+        # Local: (10*2+1)*(10*2) = 420 tokens
+        #   - <image> tokens: 10*2 * 10*2 = 400
+        #   - <newline> tokens: 10*2 = 20
+        # Total tokens: 273 + 420 = 693
+        assert result["number_of_image_tokens"] == 693
+        # Pure <image>: 256 (global) + 400 (local) = 656
+        assert result["image_token"][1] == 656
+        # <image_newline>: 16 (global) + 20 (local) = 36
+        assert result["image_newline_token"][1] == 36
+        # <image_separator>: 1 (only in global)
+        assert result["image_separator_token"][1] == 1
