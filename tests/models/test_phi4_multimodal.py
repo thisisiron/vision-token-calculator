@@ -50,8 +50,8 @@ class TestPhi4MultimodalRegistration:
         assert isinstance(analyst, Phi4MultimodalAnalyst)
 
 
-class TestPhi4MultimodalCropCalculation:
-    """Crop grid calculation tests."""
+class TestPhi4MultimodalProcessingModes:
+    """Processing mode tests."""
 
     def test_wide_image_crops(self):
         """Wide image (1920x1080) should get appropriate crops."""
